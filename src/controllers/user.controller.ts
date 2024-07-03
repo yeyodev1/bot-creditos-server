@@ -6,7 +6,6 @@ import models from '../models';
 
 export async function createUser(req: Request, res: Response): Promise<void> {
   try {
-    console.log('pasamos por aqui')
     const { from: number }: Ctx = req.body.ctx;
 
     const existingUser = await models.user.findOne({ cellphone: number });
@@ -24,7 +23,6 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     
     res.status(200).send('user created succesfully');
   } catch (error) {
-    console.error('error: ', error)
     handleHttpError(res, 'Cannot create user');
   };
 };
@@ -45,7 +43,6 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
 
     if (hasFirstNameAndLastName) {
       user.name = message;
-      console.log('user en nombre: ', user)
       await user.save();
       responseMessage = '✅ ¡Tu nombre se ha registro exitosamente!';
     } else {
@@ -85,7 +82,6 @@ export async function setUserEmail (req: Request, res: Response) {
 
     if (foundEmail) {
       user.email = foundEmail[0];
-      console.log('user en correo: ', user);
       await user.save();
       responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
     } else {
@@ -119,12 +115,11 @@ export async function setUserCuil(req: Request, res: Response) {
 
     let responseMessage: string;
 
-    const cuilRegex = /^\d{2}-\d{8}-\d$/;
+    const cuilRegex = /\b\d{2}-\d{8}-\d\b/;
     const cuilFound = message.match(cuilRegex);
 
     if(cuilFound) {
       user.CUIL = cuilFound[0];
-      console.log('user en cuil: ', user);
       await user.save();;
       responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
     } else {
