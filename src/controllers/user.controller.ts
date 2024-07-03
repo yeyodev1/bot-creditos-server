@@ -45,6 +45,7 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
 
     if (hasFirstNameAndLastName) {
       user.name = message;
+      console.log('user en nombre: ', user)
       await user.save();
       responseMessage = 'Se ha guardado exitosamente tu nombre.';
     } else {
@@ -62,6 +63,85 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
 
     res.status(200).send(response)
   } catch (error) {
-    handleHttpError(res, 'cannot get user name');
+    handleHttpError(res, 'cannot set user name');
+  };
+};
+
+export async function setUserEmail (req: Request, res: Response) {
+  try {
+    const { from: number, body: message } : Ctx = req.body.ctx;
+
+    const user = await models.user.findOne( {cellphone: number });
+
+    if(!user) {
+      return handleHttpError(res, 'user not found');
+    }
+
+    
+    let responseMessage: string;
+
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const foundEmail = message.match(emailRegex);
+
+    if (foundEmail) {
+      user.email = foundEmail[0];
+      console.log('user en correo: ', user);
+      await user.save();
+      responseMessage = 'Se ha guardado exitosamente tu email.';
+    } else {
+      responseMessage = 'Tienes que escribir un email válido';
+    };
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user', 
+          content: responseMessage
+        }
+      ]
+    };
+
+    res.status(200).send(response)
+  } catch (error) {
+    handleHttpError(res, 'cannot set user email');
+  };
+};
+
+export async function setUserCuil(req: Request, res: Response) {
+  try {
+    const {from: number, body: message} : Ctx = req.body.ctx;
+
+    const user = await models.user.findOne({ cellphone: number });
+
+    if(!user) {
+      return handleHttpError(res, 'User not found');
+    }
+
+    let responseMessage: string;
+
+    const cuilRegex = /^\d{2}-\d{8}-\d$/;
+    const cuilFound = message.match(cuilRegex);
+
+    if(cuilFound) {
+      user.CUIL = cuilFound[0];
+      console.log('user en cuil: ', user);
+      await user.save();;
+      responseMessage = 'Dame unos minutos mientas verifico tu CUIL';
+    } else {
+      responseMessage = 'No he sido capaz de verificar el CUIL';
+    };
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user', 
+          content: responseMessage
+        }
+      ]
+    };
+
+    res.status(200).send(response);
+  } catch (error) {
+    handleHttpError(res, 'cannot set user cuil')
   }
 }
