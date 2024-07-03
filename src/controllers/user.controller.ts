@@ -47,9 +47,9 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
       user.name = message;
       console.log('user en nombre: ', user)
       await user.save();
-      responseMessage = 'Se ha guardado exitosamente tu nombre.';
+      responseMessage = '✅ ¡Tu nombre se ha registro exitosamente!';
     } else {
-      responseMessage = 'El nombre debe contener al menos un nombre y un apellido.';
+      responseMessage = '📌 El nombre debe contener al menos un nombre y un apellido. 😊';
     };
 
     const response = {
@@ -87,9 +87,9 @@ export async function setUserEmail (req: Request, res: Response) {
       user.email = foundEmail[0];
       console.log('user en correo: ', user);
       await user.save();
-      responseMessage = 'Se ha guardado exitosamente tu email.';
+      responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
     } else {
-      responseMessage = 'Tienes que escribir un email válido';
+      responseMessage = '📧 Necesitas escribir un correo electrónico válido, por favor. 😊';
     };
 
     const response = {
@@ -126,9 +126,9 @@ export async function setUserCuil(req: Request, res: Response) {
       user.CUIL = cuilFound[0];
       console.log('user en cuil: ', user);
       await user.save();;
-      responseMessage = 'Dame unos minutos mientas verifico tu CUIL';
+      responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
     } else {
-      responseMessage = 'No he sido capaz de verificar el CUIL';
+      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
     };
 
     const response = {
