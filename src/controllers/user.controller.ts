@@ -9,7 +9,6 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     const { from: number }: Ctx = req.body.ctx;
 
     const existingUser = await models.user.findOne({ cellphone: number });
-    console.log('user: ', existingUser)
     
     if(existingUser) {
       res.status(200).send({ message: 'user exists', user: existingUser });
@@ -28,3 +27,22 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     handleHttpError(res, 'Cannot create user');
   };
 };
+
+export async function setUserName(req: Request, res: Response): Promise<void> {
+  try {
+    const { from: number, body: message }: Ctx = req.body;
+    
+    const user = await models.user.findOne({cellphone: number});
+
+    if (!user) {
+      return handleHttpError(res, 'user not found');
+    };
+
+    user.name = message;
+    await user.save();
+
+    res.status(200).send({message: 'user name saved'})
+  } catch (error) {
+    handleHttpError(res, 'cannot get user name');
+  }
+}

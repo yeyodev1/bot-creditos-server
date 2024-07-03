@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
       required: false,
       default: '',
     },
+    CUIT: {
+      type: String,
+      required: false,
+      default: '',
+    },
     email: {
       type: String,
       required: false,
