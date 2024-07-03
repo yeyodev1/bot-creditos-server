@@ -1,9 +1,11 @@
 import express from 'express';
 
-import { createUser } from '../controllers/user.controller';
+import { createUser, setUserName } from '../controllers/user.controller';
 
 const router = express.Router();
 
 router.post('/user', createUser);
 
-export default router
+router.post('/set-user-name', setUserName);
+
+export default router;``
