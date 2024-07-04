@@ -46,3 +46,26 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
     handleHttpError(res, 'cannot get user name');
   }
 }
+
+export async function getBenefitNumber(req: Request, res: Response) {
+  try {
+    const { from: number, body: message }: Ctx = req.body;
+    
+    const user = await models.user.findOne({cellphone: number});
+    
+    if (!user) {
+      return handleHttpError(res, 'user not found');
+    };
+
+    if(!user.CUIT) {
+      return handleHttpError(res, 'user cuit not found')
+    }
+    
+    user.benefitNumber = message;
+    await user.save();
+
+    res.status(200).send({message: 'benefit number saved'})
+  } catch (error) {
+    handleHttpError(res, 'cannot get benefit number')
+  }
+}
