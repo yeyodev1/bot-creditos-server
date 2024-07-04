@@ -14,7 +14,7 @@ const financialDataSchema = new mongoose.Schema(
       required: false,
     },
     otherDebs: {
-      type: {}
+      type: Boolean
     },
     requestedAmount: {
       type: Number,
