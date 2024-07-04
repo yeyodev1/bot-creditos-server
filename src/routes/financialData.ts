@@ -5,6 +5,6 @@ import { financialDataDebtsValidator } from '../validators/financialData.validat
 
 const router = express.Router();
 
-router.post('/other-debts', financialDataDebtsValidator, verifyOtherDebs);
+router.post('/set-other-debts', financialDataDebtsValidator, verifyOtherDebs);
 
 export default router;
