@@ -1,11 +1,7 @@
-import { WHATSAPP_ARGENTINA_PREFIXES } from "../variables/prefixes";
+import { parsedNumber } from '../interfaces/parsedNumber';
+import { WHATSAPP_ARGENTINA_PREFIXES } from '../variables/prefixes';
 
-interface parsedNumber {
-  areaCode: string;
-  restOfNumber: string
-}
-
-export function extractPrefixAndNumber(phoneNumber: string): parsedNumber | string  {
+export function extractPrefixAndNumber(phoneNumber: string): parsedNumber {
 
   if (!phoneNumber.startsWith('549')) {
     throw new Error('the number doesnt start width 549 prefix');
@@ -21,5 +17,5 @@ export function extractPrefixAndNumber(phoneNumber: string): parsedNumber | stri
       return { areaCode, restOfNumber };
     };
   };
-  return 'prefix not found';
+  throw new Error('Prefix not found');
 };
