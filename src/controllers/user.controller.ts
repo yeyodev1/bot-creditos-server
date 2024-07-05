@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 
-import handleHttpError from '../utils/handleError';
-import { Ctx } from '../interfaces/ctx';
 import models from '../models';
+import handleHttpError from '../utils/handleError';
+import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
+
+import type{ Ctx } from '../interfaces/ctx';
 
 export async function createUser(req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
+    console.log('andamos creando user');
 
     const existingUser = await models.user.findOne({ cellphone: number });
     
@@ -18,11 +21,13 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     const userData = new models.user({
       cellphone: number,
     });
+    console.log(userData)
 
     await userData.save();
     
     res.status(200).send('user created succesfully');
   } catch (error) {
+    console.error('error: ', error)
     handleHttpError(res, 'Cannot create user');
   };
 };
@@ -30,8 +35,11 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 export async function setUserName(req: Request, res: Response): Promise<void> {
   try {
     const { from: number, body: message }: Ctx = req.body.ctx;
+    console.log('colocamos nombreee')
     
     const user = await models.user.findOne({cellphone: number});
+    const numbeParsed = extractPrefixAndNumber(number);
+    console.log('numero parseado: ', numbeParsed)
 
     if (!user) {
       return handleHttpError(res, 'user not found');
@@ -115,7 +123,7 @@ export async function setUserCuil(req: Request, res: Response) {
 
     let responseMessage: string;
 
-    const cuilRegex = /\b\d{2}-\d{8}-\d\b/;
+    const cuilRegex = /^\d{2}-\d{8}-\d{1}$|^\d{11}$/;
     const cuilFound = message.match(cuilRegex);
 
     if(cuilFound) {
