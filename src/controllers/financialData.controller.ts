@@ -21,7 +21,21 @@ export async function verifyOtherDebs(req: Request, res: Response) {
       { $set: { otherDebs } },
     );
 
-    res.status(200).send({ message: 'other debs saved', financialData });    
+    let responseMessage = 'Lamentablemente no podemos continuar con la solicitud de tu crédito 😔'
+    if(otherDebs) {
+      responseMessage = 'Perfecto podemos continuar con la solicitud de tu crédito 🚀';
+    }
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user',
+          content: responseMessage,
+        }
+      ]
+    }
+
+    res.status(200).send(response);
   } catch (error) {
     handleHttpError(res, 'cannot verify if user has other debts')
   }
