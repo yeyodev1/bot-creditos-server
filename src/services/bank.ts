@@ -1,6 +1,7 @@
-import axios from "axios";
-import { parsedNumber } from "../interfaces/parsedNumber";
-import { extractPrefixAndNumber } from "../utils/extractPrefixAndNumber"
+import axios from 'axios';
+
+import { parsedNumber } from '../interfaces/parsedNumber';
+import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 
 export class BankService {
   async validateCreditApproval(cellphone: string, email: string, cuilNumber: string) {
