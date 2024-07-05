@@ -1,6 +1,11 @@
 import express from 'express';
 
-import { createUser, setUserName, setUserEmail, setUserCuil } from '../controllers/user.controller';
+import {
+	createUser,
+	setUserName,
+	setUserEmail,
+	setUserCuil,
+} from '../controllers/user.controller';
 
 const router = express.Router();
 
