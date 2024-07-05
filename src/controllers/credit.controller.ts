@@ -26,7 +26,7 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
       return handleHttpError(res, 'user has not cuil');
     };
     
-    const credit = await bankService.validateCreditApproval("5491137815322", user.email, user.CUIL);
+    const credit = await bankService.validateCreditApproval("5491137815322", user.CUIL, user.email);
 
     let message;
     if(credit) {
