@@ -18,8 +18,18 @@ export const userValidatorCreate = [
 
   check('CUIL')
     .optional()
-    .matches(/^\d{2}-\d{8}-\d{1}$/)
+    .matches(/^\d{2}-\d{8}-\d{1}$|^\d{11}$/)
     .withMessage('CUIL is not valid'),
+
+  check('CUIT')
+    .optional()
+    .matches(/^\d{2}-\d{8}-\d{1}$|^\d{11}$/)
+    .withMessage('CUIT is not valid'),
+
+  check('benefitNumber')
+    .optional()
+    .isString()
+    .withMessage('Benefit Number must be a string'),
     
   check('email')
     .optional()
