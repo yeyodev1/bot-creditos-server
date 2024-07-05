@@ -166,7 +166,18 @@ export async function getBenefitNumber(req: Request, res: Response) {
     user.benefitNumber = message;
     await user.save();
 
-    res.status(200).send({message: 'benefit number saved'})
+    const responseMessage = '✅ ¡Tu número de beneficio se ha registrado exitosamente!';
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user',
+          content: responseMessage,
+        }
+      ]
+    }
+
+    res.status(200).send(response);
   } catch (error) {
     handleHttpError(res, 'cannot get benefit number')
   }
