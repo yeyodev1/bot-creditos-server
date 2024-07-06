@@ -2,7 +2,7 @@ import { body, check } from 'express-validator';
 import { NextFunction, Request, Response } from 'express';
 
 import validateResults from '../utils/handleValidator';
-// ^\+?(\d{1,4})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,9}[-.\s]?\d{1,9}$
+
 export const financialDataDebtsValidator = [
   body('ctx.from')
     .trim()
@@ -10,7 +10,7 @@ export const financialDataDebtsValidator = [
     .withMessage('Cellphone is required')
     .matches(/^\+?(\d{1,4})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,9}[-.\s]?\d{1,9}$/)
     .withMessage('Cellphone is not valid'),
-    
+
   check('message')
     .trim()
     .notEmpty()
