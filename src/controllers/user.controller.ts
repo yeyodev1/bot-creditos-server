@@ -128,7 +128,7 @@ export async function setUserCuil(req: Request, res: Response) {
 
     if(cuilFound) {
       user.CUIL = cuilFound[0];
-      await user.save();;
+      await user.save();
       responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
     } else {
       responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
