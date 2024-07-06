@@ -8,7 +8,7 @@ export const userValidatorCreate = [
     .trim()
     .notEmpty()
     .withMessage('Cellphone is required')
-    .isMobilePhone('es-AR')
+    .matches(/^\+?(\d{1,4})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,9}[-.\s]?\d{1,9}$/)
     .withMessage('Cellphone is not valid'),
     
   check('name')
