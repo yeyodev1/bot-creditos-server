@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 
-import handleHttpError from '../utils/handleError';
 import models from '../models';
-import type { Ctx } from '../interfaces/ctx';
 import { BankService } from '../services/bank';
+import handleHttpError from '../utils/handleError';
+
+import type { Ctx } from '../interfaces/ctx.interface';
+import type { ApiResponseBank } from '../interfaces/bankRequest.interface';
 
 const bankService = new BankService();
 
@@ -26,11 +28,14 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
       return handleHttpError(res, 'user has not cuil');
     };
     
-    const credit = await bankService.validateCreditApproval("5491137815322", user.CUIL, user.email);
+    const credit: ApiResponseBank = await bankService.validateCreditApproval("5491137815322", user.CUIL, user.email);
 
     let message;
     if(credit) {
-      message = 'perfecto, si tienes credito'
+      user.CUIT = credit.objects[0].cuit;
+      console.log('user: ', user);
+      await user.save();
+      message = 'perfecto, puedes solicitar un crédito'
     } else {
       message = 'lo sentimos, no tienes credito'
     }

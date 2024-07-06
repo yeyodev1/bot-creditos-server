@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { parsedNumber } from '../interfaces/parsedNumber';
+import { parsedNumber } from '../interfaces/parsedNumber.interface';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 
 export class BankService {
