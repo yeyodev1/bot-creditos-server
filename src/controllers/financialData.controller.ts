@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import models from '../models';
-import { Ctx } from '../interfaces/ctx';
+import { Ctx } from '../interfaces/ctx.interface';
 import handleHttpError from '../utils/handleError';
 
 
