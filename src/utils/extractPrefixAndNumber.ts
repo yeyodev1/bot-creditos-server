@@ -1,4 +1,4 @@
-import { parsedNumber } from '../interfaces/parsedNumber';
+import { parsedNumber } from '../interfaces/parsedNumber.interface';
 import { WHATSAPP_ARGENTINA_PREFIXES } from '../variables/prefixes';
 
 export function extractPrefixAndNumber(phoneNumber: string): parsedNumber {

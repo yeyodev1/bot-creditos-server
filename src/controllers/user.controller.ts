@@ -4,7 +4,7 @@ import models from '../models';
 import handleHttpError from '../utils/handleError';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 
-import type{ Ctx } from '../interfaces/ctx';
+import type{ Ctx } from '../interfaces/ctx.interface';
 
 export async function createUser(req: Request, res: Response): Promise<void> {
   try {

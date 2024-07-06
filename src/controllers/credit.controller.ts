@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 
-import handleHttpError from '../utils/handleError';
 import models from '../models';
-import type { Ctx } from '../interfaces/ctx';
 import { BankService } from '../services/bank';
+import handleHttpError from '../utils/handleError';
+
+import type { Ctx } from '../interfaces/ctx.interface';
 
 const bankService = new BankService();
 
