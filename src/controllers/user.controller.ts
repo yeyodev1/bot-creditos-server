@@ -149,6 +149,44 @@ export async function setUserCuil(req: Request, res: Response) {
   }
 }
 
+export async function setBenefitNumber(req: Request, res: Response) {
+  try {
+    const { from: number, body: message } : Ctx = req.body.ctx;
+
+    const user = await models.user.findOne({ cellphone: number });
+
+    if(!user) {
+      return handleHttpError(res, 'User not found');
+    }
+
+    let responseMessage: string;
+
+    const benefitNumberRegex = /^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}|\d{3}\.\d{3}\.\d{3}\.\d{3}\.\d{3}|\d{15}$/;
+    const benefitNumberFound = message.match(benefitNumberRegex);
+
+    if(benefitNumberFound) {
+      user.benefitNumber = benefitNumberFound[0];
+      await user.save();
+      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
+    } else {
+      responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo. 😊';
+    };
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user', 
+          content: responseMessage
+        }
+      ]
+    };
+
+    res.status(200).send(response);
+  } catch (error) {
+    handleHttpError(res, 'cannot set user benefit number')
+  }
+}
+
 export async function getBenefitNumber(req: Request, res: Response) {
   try {
     const { from: number, body: message }: Ctx = req.body.ctx;
@@ -159,14 +197,11 @@ export async function getBenefitNumber(req: Request, res: Response) {
       return handleHttpError(res, 'user not found');
     };
 
-    if(!user.CUIT) {
-      return handleHttpError(res, 'user cuit not found')
-    }
-    
-    user.benefitNumber = message;
-    await user.save();
+    let responseMessage = 'Ups no tienes un número de beneficio registrado 😔';
 
-    const responseMessage = '✅ ¡Tu número de beneficio se ha registrado exitosamente!';
+    if(user.benefitNumber) {
+      responseMessage = `Tu número de beneficio es: ${user.benefitNumber} 🚀` 
+    }
 
     const response = {
       messages: [

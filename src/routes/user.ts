@@ -5,6 +5,7 @@ import {
 	setUserName, 
 	setUserCuil,
 	setUserEmail,
+	setBenefitNumber,
 	getBenefitNumber, 
 	verifyCuitOrganizations,
 } from '../controllers/user.controller';
@@ -17,6 +18,7 @@ router.post('/set-user-name', setUserName);
 router.post('/set-user-cuil', setUserCuil);
 router.post('/set-user-email', setUserEmail);
 router.post('/user', userValidatorCreate, createUser);
+router.post('/set-user-benefit-number', setBenefitNumber);
 
 router.get('/get-benefit-number', getBenefitNumber);
 router.get('/verify-cuit-organizations', verifyCuitOrganizations);
