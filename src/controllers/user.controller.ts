@@ -221,6 +221,7 @@ export async function getBenefitNumber(req: Request, res: Response) {
 export async function verifyCuitOrganizations(req: Request, res: Response) {
   try {
    const { from: number }: Ctx = req.body.ctx;
+   console.log('estamos verificando organizaciones ptm: ', req.body.ctx);
  
    const user = await models.user.findOne({cellphone: number});
  
@@ -232,7 +233,7 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
      return handleHttpError(res, 'user cuit not found')
    }
 
-   const responseMessage = `🔍 Verifícanos por favor si este es el organismo que te paga los haberes: ${user.CUIT} ✅`
+   const responseMessage = `🔍 ¿Este es el organismo que te paga los haberes: ${user.CUIT}?`
 
    const response = {
     messages: [

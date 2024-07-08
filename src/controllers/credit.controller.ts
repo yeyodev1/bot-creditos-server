@@ -31,7 +31,7 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
     const credit: ApiResponseBank = await bankService.validateCreditApproval("5491137815322", user.CUIL, user.email);
 
     let message;
-    if(credit) {
+    if(credit.objects[0]) {
       user.CUIT = credit.objects[0].cuit;
       console.log('user: ', user);
       await user.save();
