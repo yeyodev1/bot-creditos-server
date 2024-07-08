@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 
 import user from './user';
 import credit from './credit';
+import financialData from './financialData';;
 
 function routerApi(app: Application) {
   const router = express.Router();
@@ -10,6 +11,7 @@ function routerApi(app: Application) {
 
   router.use(user);
   router.use(credit);
-};
+  router.use(financialData)
+}
 
 export default routerApi
