@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import models from '../models';
 import handleHttpError from '../utils/handleError';
+import { addRowsToSheet } from '../utils/handleSheetData';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 
 import type{ Ctx } from '../interfaces/ctx.interface';
@@ -22,6 +23,11 @@ export async function createUser(req: Request, res: Response): Promise<void> {
       cellphone: number,
     });
     console.log(userData)
+
+    const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
+    await addRowsToSheet({
+      data: [{ ['resto del numero']: restOfNumber}]
+    });
 
     await userData.save();
     
@@ -53,6 +59,9 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
       user.name = message;
       await user.save();
       responseMessage = '✅ ¡Tu nombre se ha registro exitosamente!';
+      await addRowsToSheet({
+        data: [{ ['nombre']: message }]
+      });
     } else {
       responseMessage = '📌 El nombre debe contener al menos un nombre y un apellido. 😊';
     };
@@ -92,6 +101,9 @@ export async function setUserEmail (req: Request, res: Response) {
       user.email = foundEmail[0];
       await user.save();
       responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
+      await addRowsToSheet({
+        data: [{ ['email']: foundEmail[0] }]
+      });
     } else {
       responseMessage = '📧 Necesitas escribir un correo electrónico válido, por favor. 😊';
     };
@@ -130,6 +142,9 @@ export async function setUserCuil(req: Request, res: Response) {
       user.CUIL = cuilFound[0];
       await user.save();
       responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
+      await addRowsToSheet({
+        data: [{ ['cuil']: cuilFound[0] }]
+      });
     } else {
       responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
     };
@@ -168,6 +183,9 @@ export async function setBenefitNumber(req: Request, res: Response) {
       user.benefitNumber = benefitNumberFound[0];
       await user.save();
       responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
+      await addRowsToSheet({
+        data: [{ ['nro de beneficio']: benefitNumberFound[0] }]
+      });
     } else {
       responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo. 😊';
     };
