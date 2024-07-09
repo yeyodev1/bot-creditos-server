@@ -5,7 +5,7 @@ import { Storage } from '@google-cloud/storage';
 import handleHttpError from '../utils/handleError';
 import GoogleCloudStorageUploader from '../services/GcpUploadService';
 
-const bucketName = 'our-bucket-name';
+const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
 const storage = new Storage({ keyFilename: keyFilenamePath });
 const uploader = new GoogleCloudStorageUploader(storage, bucketName);
