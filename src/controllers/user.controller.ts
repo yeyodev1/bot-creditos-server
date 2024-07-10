@@ -266,67 +266,44 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
   } 
 }
 
-export async function setUserDorsoDni(req: Request, res: Response) {
-  try {
-    const { urlTempFile, name, from, host }:Ctx = req.body.ctx   
-    
-    const user = await models.user.findOne({cellphone: from});
-    const data: UploadFileData = {
-      urlTempFile,
-      name,
-      from,
-      host
-    }
-
-    if(!user) {
-      return handleHttpError(res, 'user not found');
-    }
-    
-    const imageUrl = await uploader.uploadFileFromUrl(data);
-    user.dorsoDni = imageUrl;
-    objectDataSheet['foto de verso dni'] = imageUrl;
-
-    await user.save();
-
-    const responseMessage = '✅ ¡Tu dorso de DNI se ha registrado exitosamente! 📄';
-    const response = {
-      messages: [
-        {
-          type: 'to_user',
-          content: responseMessage,
-        }
-      ]
-    };
-
-    res.status(200).send(response);
-  } catch (error) {
-    handleHttpError(res, 'cannot set user dorso dni')
-  }
-}
-
-export async function setUserReverseDni(req: Request, res: Response) {
+export async function setUserMedia(req: Request, res: Response) {
   try {
     const { urlTempFile, name, from, host }:Ctx = req.body.ctx    
     
-    const user = await models.user.findOne({cellphone: from});
+    const user = await models.user.findOne({ cellphone: from });
     const data: UploadFileData = {
       urlTempFile,
       name,
       from,
       host
     }
+    let responseMessage;
 
     if(!user) {
       return handleHttpError(res, 'user not found');
     }
 
     const imageUrl = await uploader.uploadFileFromUrl(data);
-    user.reverseDni = imageUrl;
-    objectDataSheet['foto de anverso dni'] = imageUrl;
 
+    if(!user.dorsoDni) {
+      responseMessage = '✅ ¡Tu dorso de DNI se ha registrado exitosamente! 📄';
+      user.dorsoDni = imageUrl;
+      objectDataSheet['foto de verso dni'] = imageUrl;  
+    }
+    else if(!user.reverseDni) {
+      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄';
+      user.reverseDni = imageUrl;
+      objectDataSheet['foto de anverso dni'] = imageUrl;
+    }
+    else if(!user.salaryReceipt) {
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄';
+      user.salaryReceipt = imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      await addRowsToSheet();
+    }
+    
     await user.save();
 
-    const responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄';
     const response = {
       messages: [
         {
@@ -338,45 +315,6 @@ export async function setUserReverseDni(req: Request, res: Response) {
 
     res.status(200).send(response);
   } catch (error) {
-    handleHttpError(res, 'cannot set user reverse dni')
-  }
-}
-
-export async function setUserSalaryReceipt(req: Request, res: Response) {
-  try {
-    const { urlTempFile, name, from, host }:Ctx = req.body.ctx    
-    
-    const user = await models.user.findOne({cellphone: from});
-    const data: UploadFileData = {
-      urlTempFile,
-      name,
-      from,
-      host
-    }
-
-    if(!user) {
-      return handleHttpError(res, 'user not found');
-    }
-
-    const imageUrl = await uploader.uploadFileFromUrl(data);
-    user.salaryReceipt = imageUrl;
-    objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-    
-    await addRowsToSheet();
-    await user.save();
-
-    const responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄';
-    const response = {
-      messages: [
-        {
-          type: 'to_user',
-          content: responseMessage,
-        }
-      ]
-    };
-
-    res.status(200).send(response);
-  } catch (error) {
-    handleHttpError(res, 'cannot set user salary receipt')
+    handleHttpError(res, 'cannot set user media')
   }
 }
