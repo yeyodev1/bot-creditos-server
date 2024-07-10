@@ -27,6 +27,21 @@ const userSchema = new mongoose.Schema(
       required: false,
       default: '',
     },
+    dorsoDni: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    reverseDni: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    salaryReceipt: {
+      type: String,
+      required: false,
+      default: '',
+    },
     email: {
       type: String,
       required: false,
