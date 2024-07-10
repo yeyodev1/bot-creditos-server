@@ -5,9 +5,7 @@ import {
 	setUserName, 
 	setUserCuil,
 	setUserEmail,
-	setUserDorsoDni,
-	setUserReverseDni,
-	setUserSalaryReceipt,
+	setUserMedia,
 	setBenefitNumber,
 	getBenefitNumber, 
 	verifyCuitOrganizations,
@@ -19,9 +17,7 @@ const router = express.Router();
 router.post('/set-user-name', setUserName);
 router.post('/set-user-cuil', setUserCuil);
 router.post('/set-user-email', setUserEmail);
-router.post('/set-user-dorso-dni', setUserDorsoDni);
-router.post('/set-user-reverse-dni', setUserReverseDni);
-router.post('/set-user-salary-receipt', setUserSalaryReceipt);
+router.post('/set-user-media', setUserMedia);
 router.post('/user', userValidatorCreate, createUser);
 router.post('/set-user-benefit-number', setBenefitNumber);
 
