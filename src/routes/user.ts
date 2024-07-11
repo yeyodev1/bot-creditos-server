@@ -5,6 +5,7 @@ import {
 	setUserName, 
 	setUserCuil,
 	setUserEmail,
+	setUserMedia,
 	setBenefitNumber,
 	getBenefitNumber, 
 	verifyCuitOrganizations,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.post('/set-user-name', setUserName);
 router.post('/set-user-cuil', setUserCuil);
 router.post('/set-user-email', setUserEmail);
+router.post('/set-user-media', setUserMedia);
 router.post('/user', userValidatorCreate, createUser);
 router.post('/set-user-benefit-number', setBenefitNumber);
 

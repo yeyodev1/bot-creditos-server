@@ -37,3 +37,10 @@ export interface Ctx {
   host: string;
   urlTempFile: string;
 }
+
+export interface UploadFileData {
+  urlTempFile: string;
+  name: string;
+  from: string;
+  host: string;
+}

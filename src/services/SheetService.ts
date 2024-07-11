@@ -13,7 +13,14 @@ const serviceAccountAuth = new JWT({
 })
 
 const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID!, serviceAccountAuth);
-async function loadInfo() {
+
+(async function () {
   await doc.loadInfo();
+})();
+
+export async function getSheetByIndex(index = 0) {
+  if(!doc) {
+    throw new Error('Google Spreadsheet not loaded');
+  }
+  return doc.sheetsByIndex[index];
 }
-loadInfo();
