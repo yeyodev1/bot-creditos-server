@@ -176,7 +176,7 @@ export async function setBenefitNumber(req: Request, res: Response) {
 
     let responseMessage: string;
 
-    const benefitNumberRegex = /^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}|\d{3}\.\d{3}\.\d{3}\.\d{3}\.\d{3}|\d{15}$/;
+    const benefitNumberRegex = /^\D*(\d\D*){10,}$/;
     const benefitNumberFound = message.match(benefitNumberRegex);
 
     if(benefitNumberFound) {
@@ -249,7 +249,7 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
      return handleHttpError(res, 'user cuit not found')
    }
 
-   const responseMessage = `🔍 ¿Este es el organismo que te paga los haberes: ${user.CUIT}?`
+   const responseMessage = `🔍 Hemos verificado a tu CUIT `
 
    const response = {
     messages: [
@@ -286,12 +286,12 @@ export async function setUserMedia(req: Request, res: Response) {
     const imageUrl = await uploader.uploadFileFromUrl(data);
 
     if(!user.dorsoDni) {
-      responseMessage = '✅ ¡Tu dorso de DNI se ha registrado exitosamente! 📄';
+      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       user.dorsoDni = imageUrl;
       objectDataSheet['foto de verso dni'] = imageUrl;  
     }
     else if(!user.reverseDni) {
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄';
+      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       user.reverseDni = imageUrl;
       objectDataSheet['foto de anverso dni'] = imageUrl;
     }
