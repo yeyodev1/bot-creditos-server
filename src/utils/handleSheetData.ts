@@ -4,7 +4,7 @@ import { getSheetByIndex } from "../services/SheetService";
 type RowCellData = string | number | boolean | Date;
 type RowData = Record<string, RowCellData>;
 
-export const objectDataSheet: RowData = {
+export let objectDataSheet: RowData = {
   nombre: '',
   cuil: '',
   cuit: '',
