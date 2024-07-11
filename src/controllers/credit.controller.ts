@@ -5,6 +5,7 @@ import { BankService } from '../services/bank';
 import handleHttpError from '../utils/handleError';
 
 import type { Ctx } from '../interfaces/ctx.interface';
+import { objectDataSheet } from '../utils/handleSheetData';
 import type { ApiResponseBank } from '../interfaces/bankRequest.interface';
 
 const bankService = new BankService();
@@ -33,6 +34,7 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
     let message;
     if(credit.objects[0]) {
       user.CUIT = credit.objects[0].cuit;
+      objectDataSheet['cuit'] = credit.objects[0].cuit;
       console.log('user: ', user);
       await user.save();
       message = 'perfecto, puedes solicitar un crédito'
