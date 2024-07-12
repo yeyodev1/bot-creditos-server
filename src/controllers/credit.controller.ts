@@ -5,7 +5,7 @@ import { BankService } from '../services/bank';
 import handleHttpError from '../utils/handleError';
 
 import type { Ctx } from '../interfaces/ctx.interface';
-import { objectDataSheet } from '../utils/handleSheetData';
+import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
 import type { ApiResponseBank } from '../interfaces/bankRequest.interface';
 import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 
@@ -41,12 +41,15 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
         const userCuitOrg = CUITS_ORGANIZATIONS[cuit as keyof typeof CUITS_ORGANIZATIONS];
         message = `Hemos identificado que sos empleado de ${userCuitOrg} y tenemos las mejores condiciones para ofrecerte el crédito con cobro por descuento de haberes (Decreto 14-2012).`;
       } else if (cuit === IPS_CUIT) {
-        message = 'Hemos identificado que sos beneficiario de IPS Provincia de Bs As y tenemos buenas condiciones para ofrecerte el crédito con cobro por descuento de haberes. El monto de estos créditos lo determina IPS según el cupo que tengas disponible. 😊';
+        message = `Hemos identificado que sos beneficiario de IPS Provincia de Bs As y tenemos buenas condiciones para ofrecerte el crédito con cobro por descuento de haberes. 
+        El monto de estos créditos lo determina IPS según el cupo que tengas disponible. 😊`;
       } else {
         message = 'Hemos verificado tu CUIT. 😊';
       }
     
       objectDataSheet['cuit'] = cuit;
+      await addRowsToSheet('cuit', cuit);
+      
       console.log('user: ', user);
       await user.save();
     } else {

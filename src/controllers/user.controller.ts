@@ -35,6 +35,9 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     objectDataSheet['codigo de area'] = areaCode;
     objectDataSheet['resto del numero'] = restOfNumber;
 
+    await addRowsToSheet('resto del numero', restOfNumber);
+    await addRowsToSheet('codigo de area', areaCode);
+
     await userData.save();
     
     res.status(200).send('user created succesfully');
@@ -65,7 +68,6 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
       user.name = message;
       await user.save();
       responseMessage = '✅ ¡Tu nombre se ha registro exitosamente!';
-      objectDataSheet['nombre'] = message;
     } else {
       responseMessage = '📌 El nombre debe contener al menos un nombre y un apellido. 😊';
     };
@@ -106,6 +108,8 @@ export async function setUserEmail (req: Request, res: Response) {
       await user.save();
       responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
       objectDataSheet['email'] = foundEmail[0];
+      await addRowsToSheet('email', foundEmail[0]);
+
     } else {
       responseMessage = '📧 Necesitas escribir un correo electrónico válido, por favor. 😊';
     };
@@ -145,6 +149,8 @@ export async function setUserCuil(req: Request, res: Response) {
       await user.save();
       responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
       objectDataSheet['cuil'] = cuilFound[0];
+      await addRowsToSheet('cuil', cuilFound[0]);
+
     } else {
       responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
     };
@@ -184,6 +190,8 @@ export async function setBenefitNumber(req: Request, res: Response) {
       await user.save();
       responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
       objectDataSheet['nro de beneficio'] = benefitNumberFound[0];
+      await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
+
     } else {
       responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo. 😊';
     };
@@ -289,17 +297,22 @@ export async function setUserMedia(req: Request, res: Response) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       user.dorsoDni = imageUrl;
       objectDataSheet['foto de verso dni'] = imageUrl;  
+      await addRowsToSheet('foto de anverso dni', imageUrl)
+
     }
     else if(!user.reverseDni) {
       responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       user.reverseDni = imageUrl;
       objectDataSheet['foto de anverso dni'] = imageUrl;
+      await addRowsToSheet('foto de verso dni', imageUrl);
+
     }
     else if(!user.salaryReceipt) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄';
       user.salaryReceipt = imageUrl;
       objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-      await addRowsToSheet();
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+
     }
     
     await user.save();
