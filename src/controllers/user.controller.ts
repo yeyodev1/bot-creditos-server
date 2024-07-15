@@ -9,6 +9,7 @@ import type{ Ctx, UploadFileData } from '../interfaces/ctx.interface';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
 import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
+// import { validateBenefitNumber } from '../utils/validateBenefitNumber';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -189,18 +190,19 @@ export async function setBenefitNumber(req: Request, res: Response) {
 
     let responseMessage: string;
 
-    const benefitNumberRegex = /^\D*(\d\D*){10,}$/;
+    const benefitNumberRegex = /^\d{3}\d{8}\d$/;
     const benefitNumberFound = message.match(benefitNumberRegex);
+    console.log('benefitnumeberfound: ', benefitNumberFound)
 
     if(benefitNumberFound) {
       user.benefitNumber = benefitNumberFound[0];
+      console.log('entramos aqui al if' )
       await user.save();
-      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
+      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅\n\nEscribe *continuar* para seguir adelante';
       objectDataSheet['nro de beneficio'] = benefitNumberFound[0];
       await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
-
     } else {
-      responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo. 😊';
+      responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo escribiendo *reintentar*😊';
     };
 
     const response = {
@@ -211,6 +213,7 @@ export async function setBenefitNumber(req: Request, res: Response) {
         }
       ]
     };
+    console.log('response: ', response)
 
     res.status(200).send(response);
   } catch (error) {
