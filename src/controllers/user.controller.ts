@@ -8,6 +8,7 @@ import GoogleCloudStorageUploader from '../services/GcpUploadService';
 import type{ Ctx, UploadFileData } from '../interfaces/ctx.interface';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
+import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -19,6 +20,15 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     const { from: number }: Ctx = req.body.ctx;
     console.log('andamos creando user');
 
+    const {areaCode, restOfNumber} = extractPrefixAndNumber('549112335669263');
+    objectDataSheet['codigo de area'] = areaCode;
+    objectDataSheet['resto del numero'] = restOfNumber;
+
+    const a = await addRowsToSheet('resto del numero', restOfNumber);
+    const b = await addRowsToSheet('codigo de area', areaCode);
+
+    console.log('resto del numero guardado: ', a);
+    console.log('codigo de area: ', b)
     const existingUser = await models.user.findOne({ cellphone: number });
     
     if(existingUser) {
@@ -30,13 +40,6 @@ export async function createUser(req: Request, res: Response): Promise<void> {
       cellphone: number,
     });
     console.log(userData)
-
-    const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
-    objectDataSheet['codigo de area'] = areaCode;
-    objectDataSheet['resto del numero'] = restOfNumber;
-
-    await addRowsToSheet('resto del numero', restOfNumber);
-    await addRowsToSheet('codigo de area', areaCode);
 
     await userData.save();
     
@@ -147,10 +150,14 @@ export async function setUserCuil(req: Request, res: Response) {
     if(cuilFound) {
       user.CUIL = cuilFound[0];
       await user.save();
+      console.log('userrr: ', user)
       responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
+      console.log('debajo de resopnse message')
       objectDataSheet['cuil'] = cuilFound[0];
-      await addRowsToSheet('cuil', cuilFound[0]);
-
+      console.log('object data sheet: ', objectDataSheet);
+      const cuil = await addRowsToSheet('cuil', cuilFound[0]);
+      console.log('despues de agregar cuil')
+      console.log('cuil: ', cuil);
     } else {
       responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
     };
@@ -257,7 +264,15 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
      return handleHttpError(res, 'user cuit not found')
    }
 
-   const responseMessage = `🔍 Hemos verificado a tu CUIT `
+   let responseMessage: string = ''
+
+   if(user.CUIT === IPS_CUIT) {
+    responseMessage = 'Ya que hemos verificado tu CUIT\n\nEscribe *vamos*';
+   } else if ( user.CUIT && CUITS_ORGANIZATIONS[user.CUIT]) {
+    responseMessage = 'Ya que hemos verificado tu CUIT\n\n Escribe *sigamos*';
+   } else if ( user.CUIT && user.CUIT !== IPS_CUIT) {
+    responseMessage = 'Ya que hemos verificado tu CUIT \n\n Escribe *proseguir*';
+   };
 
    const response = {
     messages: [

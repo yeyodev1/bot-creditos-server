@@ -180,7 +180,7 @@ export const WHATSAPP_ARGENTINA_PREFIXES: string[] = [
   '2399', // Valle Viejo
 ];
 
-export const CUITS_ORGANIZATIONS = {
+export const CUITS_ORGANIZATIONS: { [key: string]: string }= {
   '30546676410': 'Ejército Argentino',
   '30547561212': 'Armada Argentina',
   '30546676343': 'Fuerza Aérea Argentina',
