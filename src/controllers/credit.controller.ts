@@ -15,10 +15,8 @@ const bankService = new BankService();
 export async function userHasCredit (req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
-    console.log('estamos viendo si hay creditooo');
 
     const user = await models.user.findOne({ cellphone: number});
-    console.log('usuario: ', user);
     
     if(!user) {
       return handleHttpError(res, 'user not found')
@@ -30,13 +28,9 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
     if(!user.CUIL) {
       return handleHttpError(res, 'user has not cuil');
     };
-    console.log('despues de los ifsss')
     
     let message: string;
-    console.log('antesd de consultar si hay credito')
-    const credit: ApiResponseBank = await bankService.validateCreditApproval("5491137815322", user.CUIL, user.email);
-    console.log('despues de consultar si hay credito')
-    console.log('credito: ', credit)
+    const credit: ApiResponseBank = await bankService.validateCreditApproval(user.CUIL);
     if (credit.objects[0]) {
       const { cuit } = credit.objects[0];
       user.CUIT = cuit;
@@ -53,12 +47,10 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
     
       objectDataSheet['cuit'] = cuit;
       await addRowsToSheet('cuit', cuit);
-      
-      console.log('user: ', user);
       await user.save();
     } else {
-      message = 'Lo sentimos, no tenemos una línea de crédito que se ajuste a ti. 😔\n\n Podrás repetir el procedimiento en una próxima ocasión';
-    }
+      message = 'Lo sentimos, no tenemos una línea de crédito que se ajuste a ti. 😔\n\n Si crees que cometiste un error al ingresar tu CUIL, escribe reintentar.\n\n\n¡Gracias por tu comprensión y hasta pronto! 👋';
+    };
 
     const response = {
       messages: [

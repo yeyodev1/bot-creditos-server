@@ -1,15 +1,21 @@
 import { parsedNumber } from '../interfaces/parsedNumber.interface';
-import { WHATSAPP_ARGENTINA_PREFIXES } from '../variables/prefixes';
+import { WHATSAPP_ARGENTINA_PREFIXES, WHATSAPP_ECUADOR_PREFIXES } from '../variables/prefixes';
 
 export function extractPrefixAndNumber(phoneNumber: string): parsedNumber {
 
-  if (!phoneNumber.startsWith('549')) {
-    throw new Error('the number doesnt start width 549 prefix');
-  };
+  let localPhoneNumber: string;
 
-  const localPhoneNumber = phoneNumber.slice(3);
+  if (phoneNumber.startsWith('549')) {
+    localPhoneNumber = phoneNumber.slice(3);
+  } else if (phoneNumber.startsWith('593')) {
+    localPhoneNumber = phoneNumber.slice(3);
+  } else {
+    throw new Error('The number doesn\'t start with 549 or 593 prefix');
+  }
 
-  for (const prefix of WHATSAPP_ARGENTINA_PREFIXES) {
+  const ALL_PREFIXES = [...WHATSAPP_ARGENTINA_PREFIXES, ...WHATSAPP_ECUADOR_PREFIXES];
+
+  for (const prefix of ALL_PREFIXES) {
     const prefixParsed = prefix.replace(/\s+/g, '');
     if ( localPhoneNumber.startsWith(prefixParsed)) {
       const areaCode = prefixParsed;

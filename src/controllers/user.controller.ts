@@ -18,17 +18,13 @@ const uploader = new GoogleCloudStorageUploader(storage, bucketName);
 export async function createUser(req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
-    console.log('andamos creando user');
 
-    const {areaCode, restOfNumber} = extractPrefixAndNumber('549112335669263');
+    const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
     objectDataSheet['codigo de area'] = areaCode;
     objectDataSheet['resto del numero'] = restOfNumber;
 
-    const a = await addRowsToSheet('resto del numero', restOfNumber);
-    const b = await addRowsToSheet('codigo de area', areaCode);
-
-    console.log('resto del numero guardado: ', a);
-    console.log('codigo de area: ', b)
+    await addRowsToSheet('resto del numero', restOfNumber);
+    await addRowsToSheet('codigo de area', areaCode);
     const existingUser = await models.user.findOne({ cellphone: number });
     
     if(existingUser) {
@@ -39,13 +35,11 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     const userData = new models.user({
       cellphone: number,
     });
-    console.log(userData)
 
     await userData.save();
     
     res.status(200).send('user created succesfully');
   } catch (error) {
-    console.error('error: ', error)
     handleHttpError(res, 'Cannot create user');
   };
 };
@@ -53,11 +47,9 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 export async function setUserName(req: Request, res: Response): Promise<void> {
   try {
     const { from: number, body: message }: Ctx = req.body.ctx;
-    console.log('colocamos nombreee')
     
     const user = await models.user.findOne({cellphone: number});
     const numbeParsed = extractPrefixAndNumber(number);
-    console.log('numero parseado: ', numbeParsed)
 
     if (!user) {
       return handleHttpError(res, 'user not found');
@@ -150,16 +142,11 @@ export async function setUserCuil(req: Request, res: Response) {
     if(cuilFound) {
       user.CUIL = cuilFound[0];
       await user.save();
-      console.log('userrr: ', user)
-      responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
-      console.log('debajo de resopnse message')
+      responseMessage = '⌛ Hemos guardado tu CUIL exitosamente 😊✅.\nProseguimos?';
       objectDataSheet['cuil'] = cuilFound[0];
-      console.log('object data sheet: ', objectDataSheet);
-      const cuil = await addRowsToSheet('cuil', cuilFound[0]);
-      console.log('despues de agregar cuil')
-      console.log('cuil: ', cuil);
+      await addRowsToSheet('cuil', cuilFound[0]);
     } else {
-      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
+      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊\n\nSi crees que cometiste un error al ingresar tu CUIL, escribe *reintentar*.';
     };
 
     const response = {
@@ -191,11 +178,9 @@ export async function setBenefitNumber(req: Request, res: Response) {
 
     const benefitNumberRegex = /^\d{3}\d{8}\d$/;
     const benefitNumberFound = message.match(benefitNumberRegex);
-    console.log('benefitnumeberfound: ', benefitNumberFound)
 
     if(benefitNumberFound) {
       user.benefitNumber = benefitNumberFound[0];
-      console.log('entramos aqui al if' )
       await user.save();
       responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅\n\nEscribe *continuar* para seguir adelante';
       objectDataSheet['nro de beneficio'] = benefitNumberFound[0];
@@ -212,7 +197,6 @@ export async function setBenefitNumber(req: Request, res: Response) {
         }
       ]
     };
-    console.log('response: ', response)
 
     res.status(200).send(response);
   } catch (error) {
@@ -254,7 +238,6 @@ export async function getBenefitNumber(req: Request, res: Response) {
 export async function verifyCuitOrganizations(req: Request, res: Response) {
   try {
    const { from: number }: Ctx = req.body.ctx;
-   console.log('estamos verificando organizaciones ptm: ', req.body.ctx);
  
    const user = await models.user.findOne({cellphone: number});
  
@@ -269,11 +252,11 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
    let responseMessage: string = ''
 
    if(user.CUIT === IPS_CUIT) {
-    responseMessage = 'Ya que hemos verificado tu CUIT\n\nEscribe *vamos*';
+    responseMessage = '¡Excelente! 🎉 Hemos verificado tu CUIT.\n\nEscribe *vamos* para continuar.🔜';
    } else if ( user.CUIT && CUITS_ORGANIZATIONS[user.CUIT]) {
-    responseMessage = 'Ya que hemos verificado tu CUIT\n\n Escribe *sigamos*';
+    responseMessage = '¡Excelente! 🎉 Hemos verificado tu CUIT.\n\n Escribe *sigamos* para continuar.🔜';
    } else if ( user.CUIT && user.CUIT !== IPS_CUIT) {
-    responseMessage = 'Ya que hemos verificado tu CUIT \n\n Escribe *proseguir*';
+    responseMessage = '¡Excelente! 🎉 Hemos verificado tu CUIT.\n\n Escribe *proseguir* para continuar.🔜';
    };
 
    const response = {
@@ -300,10 +283,17 @@ export async function setUserMedia(req: Request, res: Response) {
 
     if(!user) {
       return handleHttpError(res, 'user not found');
-    }
+    };
+
+    if (user.dorsoDni && user.reverseDni && user.salaryReceipt) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+      await user.save(); 
+    };
 
     const imageUrl = await uploader.uploadImageFromMessage(message);
-    console.log('image url: ', imageUrl)
+
     if(!user.dorsoDni) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       user.dorsoDni = imageUrl;
