@@ -179,3 +179,21 @@ export const WHATSAPP_ARGENTINA_PREFIXES: string[] = [
   '2398', // San Fernando del Valle de Catamarca
   '2399', // Valle Viejo
 ];
+
+export const WHATSAPP_ECUADOR_PREFIXES: string[] = [
+  '995',
+]
+
+export const CUITS_ORGANIZATIONS: { [key: string]: string }= {
+  '30546676410': 'Ejército Argentino',
+  '30547561212': 'Armada Argentina',
+  '30546676343': 'Fuerza Aérea Argentina',
+  '30546636532': 'Gendarmería Nacional Argentina',
+  '30546634360': 'Prefectura Naval Argentina',
+  '30624051919': 'Policía Federal Argentina',
+  '30710608076': 'Policía de Seguridad Aeroportuaria',
+}
+
+export const IPS_CUIT = '33633178009'; 
+/* Este cuit es especial por ser el de Instituto de Previsión Social 
+ de la Provincia de Buenos Aires y tienen mejores condiciones de credito */

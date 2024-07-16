@@ -5,9 +5,10 @@ import { Storage } from '@google-cloud/storage';
 import models from '../models';
 import handleHttpError from '../utils/handleError';
 import GoogleCloudStorageUploader from '../services/GcpUploadService';
-import type{ Ctx, UploadFileData } from '../interfaces/ctx.interface';
+import type{ Ctx } from '../interfaces/ctx.interface';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
+import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -17,8 +18,13 @@ const uploader = new GoogleCloudStorageUploader(storage, bucketName);
 export async function createUser(req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
-    console.log('andamos creando user');
 
+    const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
+    objectDataSheet['codigo de area'] = areaCode;
+    objectDataSheet['resto del numero'] = restOfNumber;
+
+    await addRowsToSheet('resto del numero', restOfNumber);
+    await addRowsToSheet('codigo de area', areaCode);
     const existingUser = await models.user.findOne({ cellphone: number });
     
     if(existingUser) {
@@ -29,17 +35,11 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     const userData = new models.user({
       cellphone: number,
     });
-    console.log(userData)
-
-    const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
-    objectDataSheet['codigo de area'] = areaCode;
-    objectDataSheet['resto del numero'] = restOfNumber;
 
     await userData.save();
     
     res.status(200).send('user created succesfully');
   } catch (error) {
-    console.error('error: ', error)
     handleHttpError(res, 'Cannot create user');
   };
 };
@@ -47,11 +47,9 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 export async function setUserName(req: Request, res: Response): Promise<void> {
   try {
     const { from: number, body: message }: Ctx = req.body.ctx;
-    console.log('colocamos nombreee')
     
     const user = await models.user.findOne({cellphone: number});
     const numbeParsed = extractPrefixAndNumber(number);
-    console.log('numero parseado: ', numbeParsed)
 
     if (!user) {
       return handleHttpError(res, 'user not found');
@@ -65,7 +63,6 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
       user.name = message;
       await user.save();
       responseMessage = '✅ ¡Tu nombre se ha registro exitosamente!';
-      objectDataSheet['nombre'] = message;
     } else {
       responseMessage = '📌 El nombre debe contener al menos un nombre y un apellido. 😊';
     };
@@ -106,6 +103,8 @@ export async function setUserEmail (req: Request, res: Response) {
       await user.save();
       responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
       objectDataSheet['email'] = foundEmail[0];
+      await addRowsToSheet('email', foundEmail[0]);
+
     } else {
       responseMessage = '📧 Necesitas escribir un correo electrónico válido, por favor. 😊';
     };
@@ -143,10 +142,11 @@ export async function setUserCuil(req: Request, res: Response) {
     if(cuilFound) {
       user.CUIL = cuilFound[0];
       await user.save();
-      responseMessage = '⌛ Dame unos minutos mientras verifico tu CUIL, por favor. 😊';
+      responseMessage = '⌛ Hemos guardado tu CUIL exitosamente 😊✅.\nProseguimos?';
       objectDataSheet['cuil'] = cuilFound[0];
+      await addRowsToSheet('cuil', cuilFound[0]);
     } else {
-      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊';
+      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. 😊\n\nSi crees que cometiste un error al ingresar tu CUIL, escribe *reintentar*.';
     };
 
     const response = {
@@ -176,16 +176,17 @@ export async function setBenefitNumber(req: Request, res: Response) {
 
     let responseMessage: string;
 
-    const benefitNumberRegex = /^\D*(\d\D*){10,}$/;
+    const benefitNumberRegex = /^\d{3}\d{8}\d$/;
     const benefitNumberFound = message.match(benefitNumberRegex);
 
     if(benefitNumberFound) {
       user.benefitNumber = benefitNumberFound[0];
       await user.save();
-      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
+      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅\n\nEscribe *continuar* para seguir adelante';
       objectDataSheet['nro de beneficio'] = benefitNumberFound[0];
+      await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
     } else {
-      responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo. 😊';
+      responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo escribiendo *reintentar*😊';
     };
 
     const response = {
@@ -237,7 +238,6 @@ export async function getBenefitNumber(req: Request, res: Response) {
 export async function verifyCuitOrganizations(req: Request, res: Response) {
   try {
    const { from: number }: Ctx = req.body.ctx;
-   console.log('estamos verificando organizaciones ptm: ', req.body.ctx);
  
    const user = await models.user.findOne({cellphone: number});
  
@@ -249,7 +249,15 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
      return handleHttpError(res, 'user cuit not found')
    }
 
-   const responseMessage = `🔍 Hemos verificado a tu CUIT `
+   let responseMessage: string = ''
+
+   if(user.CUIT === IPS_CUIT) {
+    responseMessage = '¡Excelente! 🎉 Hemos verificado tu CUIT.\n\nEscribe *vamos* para continuar.🔜';
+   } else if ( user.CUIT && CUITS_ORGANIZATIONS[user.CUIT]) {
+    responseMessage = '¡Excelente! 🎉 Hemos verificado tu CUIT.\n\n Escribe *sigamos* para continuar.🔜';
+   } else if ( user.CUIT && user.CUIT !== IPS_CUIT) {
+    responseMessage = '¡Excelente! 🎉 Hemos verificado tu CUIT.\n\n Escribe *proseguir* para continuar.🔜';
+   };
 
    const response = {
     messages: [
@@ -268,38 +276,47 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
 
 export async function setUserMedia(req: Request, res: Response) {
   try {
-    const { urlTempFile, name, from, host }:Ctx = req.body.ctx    
-    
+    const { message, from }:Ctx = req.body.ctx    
+
     const user = await models.user.findOne({ cellphone: from });
-    const data: UploadFileData = {
-      urlTempFile,
-      name,
-      from,
-      host
-    }
     let responseMessage;
 
     if(!user) {
       return handleHttpError(res, 'user not found');
-    }
+    };
 
-    const imageUrl = await uploader.uploadFileFromUrl(data);
+    if (user.dorsoDni && user.reverseDni && user.salaryReceipt) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+      await user.save(); 
+    };
+
+    const imageUrl = await uploader.uploadImageFromMessage(message);
 
     if(!user.dorsoDni) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       user.dorsoDni = imageUrl;
       objectDataSheet['foto de verso dni'] = imageUrl;  
+      await addRowsToSheet('foto de anverso dni', imageUrl)
+
     }
     else if(!user.reverseDni) {
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      if (user.CUIT === IPS_CUIT) {
+        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      } else {
+        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente!';
+      }
       user.reverseDni = imageUrl;
       objectDataSheet['foto de anverso dni'] = imageUrl;
+      await addRowsToSheet('foto de verso dni', imageUrl);
+
     }
-    else if(!user.salaryReceipt) {
+    else if(!user.salaryReceipt && user.CUIT === IPS_CUIT) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄';
       user.salaryReceipt = imageUrl;
       objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-      await addRowsToSheet();
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
     
     await user.save();
@@ -315,6 +332,6 @@ export async function setUserMedia(req: Request, res: Response) {
 
     res.status(200).send(response);
   } catch (error) {
-    handleHttpError(res, 'cannot set user media')
+    handleHttpError(res, 'Cannot set user media');
   }
 }
