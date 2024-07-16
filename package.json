@@ -23,15 +23,16 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-validator": "^7.1.0",
-    "file-type": "^19.1.1",
     "google-auth-library": "^9.11.0",
     "google-spreadsheet": "^4.1.2",
+    "mime-types": "^2.1.35",
     "mongoose": "^8.4.3",
     "multer": "1.4.5-lts.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/mime-types": "^2.1.4",
     "@types/multer": "^1.4.11",
     "typescript": "^5.5.2"
   }
