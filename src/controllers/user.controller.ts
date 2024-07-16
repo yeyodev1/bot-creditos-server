@@ -302,13 +302,17 @@ export async function setUserMedia(req: Request, res: Response) {
 
     }
     else if(!user.reverseDni) {
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      if (user.CUIT === IPS_CUIT) {
+        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      } else {
+        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente!';
+      }
       user.reverseDni = imageUrl;
       objectDataSheet['foto de anverso dni'] = imageUrl;
       await addRowsToSheet('foto de verso dni', imageUrl);
 
     }
-    else if(!user.salaryReceipt) {
+    else if(!user.salaryReceipt && user.CUIT === IPS_CUIT) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄';
       user.salaryReceipt = imageUrl;
       objectDataSheet['ultimo recibo de haberes'] = imageUrl;
