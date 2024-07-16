@@ -1,9 +1,10 @@
-import axios from 'axios';
-import path from 'node:path';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
+import mime from 'mime-types';
+import { Readable } from 'stream';
 import { Storage } from '@google-cloud/storage';
+import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 
-import { UploadFileData } from '../interfaces/ctx.interface';
+import { UploadImageData } from '../interfaces/ctx.interface';
 
 class GoogleCloudStorageUploader {
   private storage: Storage;
@@ -14,9 +15,65 @@ class GoogleCloudStorageUploader {
     this.bucketName = bucketName;
   }
 
-  private generateUniqueFileName(extension: string): string {
-    const hash = crypto.randomBytes(16).toString('hex');
-    return `${hash}${extension}`;
+  private async streamToBuffer(stream: Readable): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+    });
+  }
+
+  async uploadImageFromMessage(message: UploadImageData) {
+    try {
+      const { imageMessage } = message;
+
+      if (!imageMessage) {
+        throw new Error('Image message not found');
+      }
+
+      // Descargar el contenido de la imagen
+      const stream = await downloadContentFromMessage(imageMessage, 'image');
+      const buffer = await this.streamToBuffer(stream);
+
+      // Detectar el tipo de archivo usando mime-types
+      const mimeType = imageMessage.mimetype;
+      const contentType = mimeType || 'application/octet-stream';
+      let fileExtension = mime.extension(contentType);
+
+      if (!fileExtension) {
+        fileExtension = '.jpg';
+      } else {
+        fileExtension = `.${fileExtension}`;
+      }
+
+      const fileName = `${crypto.randomUUID()}${fileExtension}`;
+
+      const bucket = this.storage.bucket(this.bucketName);
+      const file = bucket.file(fileName);
+
+      // Guardar el archivo con metadatos adecuados
+      await file.save(buffer, {
+        metadata: {
+          contentType: contentType,
+          metadata: {
+            originalFilename: imageMessage.filename || 'unknown', // Usa el nombre original si está disponible
+            fileSize: imageMessage.fileLength || buffer.length,
+            width: imageMessage.width,
+            height: imageMessage.height,
+          },
+        },
+      });
+
+      await file.makePublic();
+
+      const publicUrl = `https://storage.googleapis.com/${this.bucketName}/${fileName}`;
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
@@ -50,53 +107,6 @@ class GoogleCloudStorageUploader {
         reject(`Unable to write file to blobStream: ${err}`);
       }
     });
-  }
-
-  async uploadFileFromUrl(data: UploadFileData): Promise<string> {
-    try {
-      const response = await axios.get(data.urlTempFile, { responseType: 'arraybuffer' });
-      const buffer = Buffer.from(response.data, 'binary');
-
-      const fileExtension = path.extname(data.urlTempFile);
-      const fileName = this.generateUniqueFileName(fileExtension);
-
-      const bucket = this.storage.bucket(this.bucketName);
-      const blob = bucket.file(fileName);
-      const blobStream = blob.createWriteStream({
-        resumable: false,
-        metadata: {
-          contentType: response.headers['content-type'],
-          metadata: {
-            name: data.name,
-            from: data.from,
-            host: data.host
-          }
-        }
-      });
-
-      return new Promise((resolve, reject) => {
-        blobStream.on('error', (err) => {
-          console.error('Error in blobStream:', err);
-          reject(`Unable to upload file, something went wrong: ${err}`);
-        });
-
-        blobStream.on('finish', async () => {
-          try {
-            await blob.makePublic();
-            const publicUrl = `https://storage.googleapis.com/${this.bucketName}/${blob.name}`;
-            resolve(publicUrl);
-          } catch (err) {
-            console.error('Error making file public:', err);
-            reject(`Unable to make file public: ${err}`);
-          }
-        });
-
-        blobStream.end(buffer);
-      });
-    } catch (error) {
-      console.error('Error downloading or uploading file:', error);
-      throw new Error(`Unable to download or upload file: ${error}`);
-    }
   }
 }
 

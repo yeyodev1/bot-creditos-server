@@ -7,30 +7,7 @@ export interface Ctx {
   messageTimestamp: number;
   pushName: string;
   broadcast: boolean;
-  message: {
-    imageMessage: {
-      url: string;
-      mimetype: string;
-      fileSha256: string;
-      fileLength: string;
-      height: number;
-      width: number;
-      mediaKey: string;
-      fileEncSha256: string;
-      directPath: string;
-      mediaKeyTimestamp: string;
-      jpegThumbnail: string;
-      firstScanSidecar: string;
-      firstScanLength: number;
-      scansSidecar: string;
-      scanLengths: string[];
-      midQualityFileSha256: string;
-    };
-    messageContextInfo: {
-      deviceListMetadata: Record<string, unknown>;
-      deviceListMetadataVersion: number;
-    };
-  };
+  message: UploadImageData;
   body: string;
   name: string;
   from: string;
@@ -38,9 +15,28 @@ export interface Ctx {
   urlTempFile: string;
 }
 
-export interface UploadFileData {
-  urlTempFile: string;
-  name: string;
-  from: string;
-  host: string;
-}
+export interface UploadImageData {
+  imageMessage: {
+    url: string;
+    mimetype: string;
+    fileSha256: string;
+    fileLength: string;
+    height: number;
+    width: number;
+    mediaKey: Uint8Array;
+    fileEncSha256: string;
+    directPath: string;
+    filename?: string;
+    mediaKeyTimestamp: string;
+    jpegThumbnail: string;
+    firstScanSidecar: string;
+    firstScanLength: number;
+    scansSidecar: string;
+    scanLengths: string[];
+    midQualityFileSha256: string;
+  };
+  messageContextInfo: {
+    deviceListMetadata: Record<string, unknown>;
+    deviceListMetadataVersion: number;
+  };
+};

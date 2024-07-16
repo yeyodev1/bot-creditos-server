@@ -5,11 +5,10 @@ import { Storage } from '@google-cloud/storage';
 import models from '../models';
 import handleHttpError from '../utils/handleError';
 import GoogleCloudStorageUploader from '../services/GcpUploadService';
-import type{ Ctx, UploadFileData } from '../interfaces/ctx.interface';
+import type{ Ctx } from '../interfaces/ctx.interface';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
 import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
-// import { validateBenefitNumber } from '../utils/validateBenefitNumber';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -294,23 +293,17 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
 
 export async function setUserMedia(req: Request, res: Response) {
   try {
-    const { urlTempFile, name, from, host }:Ctx = req.body.ctx    
-    
+    const { message, from }:Ctx = req.body.ctx    
+
     const user = await models.user.findOne({ cellphone: from });
-    const data: UploadFileData = {
-      urlTempFile,
-      name,
-      from,
-      host
-    }
     let responseMessage;
 
     if(!user) {
       return handleHttpError(res, 'user not found');
     }
 
-    const imageUrl = await uploader.uploadFileFromUrl(data);
-
+    const imageUrl = await uploader.uploadImageFromMessage(message);
+    console.log('image url: ', imageUrl)
     if(!user.dorsoDni) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       user.dorsoDni = imageUrl;
@@ -330,7 +323,6 @@ export async function setUserMedia(req: Request, res: Response) {
       user.salaryReceipt = imageUrl;
       objectDataSheet['ultimo recibo de haberes'] = imageUrl;
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-
     }
     
     await user.save();
@@ -346,6 +338,6 @@ export async function setUserMedia(req: Request, res: Response) {
 
     res.status(200).send(response);
   } catch (error) {
-    handleHttpError(res, 'cannot set user media')
+    handleHttpError(res, 'Cannot set user media');
   }
 }
