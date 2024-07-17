@@ -15,6 +15,7 @@ const bankService = new BankService();
 export async function userHasCredit (req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
+    console.log('estamos en user has credit')
 
     const user = await models.user.findOne({ cellphone: number});
     
@@ -37,12 +38,12 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
   
       if (cuit in CUITS_ORGANIZATIONS) {
         const userCuitOrg = CUITS_ORGANIZATIONS[cuit as keyof typeof CUITS_ORGANIZATIONS];
-        message = `Hemos identificado que sos empleado de ${userCuitOrg} y tenemos las mejores condiciones para ofrecerte el crédito con cobro por descuento de haberes (Decreto 14-2012).\n\nPara continuar con la validación escribe *continuar* ✅`;
+        message = `Hemos identificado que sos empleado de ${userCuitOrg} y tenemos las mejores condiciones para ofrecerte el crédito con cobro por descuento de haberes (Decreto 14-2012).\n\✅`;
       } else if (cuit === IPS_CUIT) {
         message = `Hemos identificado que sos beneficiario de IPS Provincia de Bs As y tenemos buenas condiciones para ofrecerte el crédito con cobro por descuento de haberes. 
-        El monto de estos créditos lo determina IPS según el cupo que tengas disponible. 😊\n\nPara continuar con la validación escribe *continuar* ✅`;
+        El monto de estos créditos lo determina IPS según el cupo que tengas disponible.✅`;
       } else {
-        message = 'Hemos verificado tu CUIT. 😊\n\nPara continuar con la validación escribe *continuar* ✅';
+        message = 'Hemos almacenado tu CUIT asociado.✅';
       }
     
       objectDataSheet['cuit'] = cuit;

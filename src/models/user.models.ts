@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
       required: false,
       default: '',
     },
+    certificateSalaryReceipt: {
+      type: String,
+      required: false,
+      default: '',
+    },
     email: {
       type: String,
       required: false,

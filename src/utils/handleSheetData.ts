@@ -10,6 +10,8 @@ type UserRowData = {
   ['foto de anverso dni']: string;
   ['foto de verso dni']: string;
   ['ultimo recibo de haberes']: string;
+  ['certificado de haberes']: string;
+  ['token']: string;
 }
 
 export let objectDataSheet: UserRowData = {
@@ -22,7 +24,9 @@ export let objectDataSheet: UserRowData = {
   'foto de anverso dni': '',
   'foto de verso dni': '',
   'ultimo recibo de haberes': '',
-}
+  'certificado de haberes': '',
+  'token': ''
+};
 
 export async function addRowsToSheet(updateFieldName: keyof UserRowData, updateFieldValue: string ,sheetIndex?: number ): Promise<void> {
   const sheet = await getSheetByIndex(sheetIndex);
