@@ -286,7 +286,7 @@ export async function setUserMedia(req: Request, res: Response) {
       return handleHttpError(res, 'user not found');
     };
 
-    if (user.dorsoDni && user.reverseDni && user.salaryReceipt && user.certificateSalaryReceipt) {
+    if (user.dorsoDni && user.reverseDni && user.salaryReceipt) {
       user.dorsoDni = '';
       user.reverseDni = '';
       user.salaryReceipt = '';
@@ -321,6 +321,7 @@ export async function setUserMedia(req: Request, res: Response) {
       const token = generateWhatsAppToken();
       objectDataSheet['token'] = token;
       await addRowsToSheet('token', token)
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
     else if(!user.salaryReceipt && user.CUIT !== IPS_CUIT) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado de haberes por favor';
@@ -331,7 +332,7 @@ export async function setUserMedia(req: Request, res: Response) {
       await addRowsToSheet('token', token)
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
-    else if(!user.certificateSalaryReceipt && user.CUIT === IPS_CUIT) {
+    else if(!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       user.certificateSalaryReceipt = imageUrl
       await addRowsToSheet('certificado de haberes', imageUrl);
