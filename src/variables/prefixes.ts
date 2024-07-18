@@ -192,6 +192,8 @@ export const CUITS_ORGANIZATIONS: { [key: string]: string }= {
   '30546634360': 'Prefectura Naval Argentina',
   '30624051919': 'Policía Federal Argentina',
   '30710608076': 'Policía de Seguridad Aeroportuaria',
+  '30546695014': 'Estado Mayor General de la Armada',
+  '30999221463': 'Ministerio de Salud'
 }
 
 export const IPS_CUIT = '33633178009'; 
