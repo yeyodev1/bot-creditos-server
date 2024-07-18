@@ -277,9 +277,15 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
 
 export async function setUserMedia(req: Request, res: Response) {
   try {
-    const { message, from }:Ctx = req.body.ctx    
+    const { urlTempFile, name, from, host, message }:Ctx = req.body.ctx    
 
     const user = await models.user.findOne({ cellphone: from });
+    const data = {
+      urlTempFile,
+      name,
+      from,
+      host
+    };
     let responseMessage;
 
     if(!user) {
@@ -315,22 +321,24 @@ export async function setUserMedia(req: Request, res: Response) {
 
     }
     else if(!user.salaryReceipt && user.CUIT === IPS_CUIT) {
+      const pdfUrl = await uploader.uploadFileFromUrl(data);
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      user.salaryReceipt = pdfUrl || imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = pdfUrl || imageUrl;
       const token = generateWhatsAppToken();
       objectDataSheet['token'] = token;
       await addRowsToSheet('token', token)
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+      await addRowsToSheet('ultimo recibo de haberes', pdfUrl || imageUrl);
     }
     else if(!user.salaryReceipt && user.CUIT !== IPS_CUIT) {
+      const pdfUrl = await uploader.uploadFileFromUrl(data);
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado de haberes por favor';
-      user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      user.salaryReceipt = pdfUrl || imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = pdfUrl || imageUrl;
       const token = generateWhatsAppToken();
       objectDataSheet['token'] = token;
       await addRowsToSheet('token', token)
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+      await addRowsToSheet('ultimo recibo de haberes', pdfUrl || imageUrl);
     }
     else if(!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';

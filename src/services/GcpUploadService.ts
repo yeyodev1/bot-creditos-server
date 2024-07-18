@@ -1,4 +1,6 @@
+import axios from 'axios';
 import crypto from 'crypto';
+import path from 'node:path';
 import mime from 'mime-types';
 import { Readable } from 'stream';
 import { Storage } from '@google-cloud/storage';
@@ -107,6 +109,58 @@ class GoogleCloudStorageUploader {
         reject(`Unable to write file to blobStream: ${err}`);
       }
     });
+  }
+
+  async uploadFileFromUrl(data: {
+    urlTempFile: string;
+    name: string;
+    from: string;
+    host: string;
+  }): Promise<string> {
+    try {
+      const response = await axios.get(data.urlTempFile, { responseType: 'arraybuffer' });
+      const buffer = Buffer.from(response.data, 'binary');
+
+      const fileExtension = path.extname(data.urlTempFile);
+      const fileName = `${crypto.randomUUID()}${fileExtension}`;
+
+      const bucket = this.storage.bucket(this.bucketName);
+      const blob = bucket.file(fileName);
+      const blobStream = blob.createWriteStream({
+        resumable: false,
+        metadata: {
+          contentType: response.headers['content-type'],
+          metadata: {
+            name: data.name,
+            from: data.from,
+            host: data.host
+          }
+        }
+      });
+
+      return new Promise((resolve, reject) => {
+        blobStream.on('error', (err) => {
+          console.error('Error in blobStream:', err);
+          reject(`Unable to upload file, something went wrong: ${err}`);
+        });
+
+        blobStream.on('finish', async () => {
+          try {
+            await blob.makePublic();
+            const publicUrl = `https://storage.googleapis.com/${this.bucketName}/${blob.name}`;
+            resolve(publicUrl);
+          } catch (err) {
+            console.error('Error making file public:', err);
+            reject(`Unable to make file public: ${err}`);
+          }
+        });
+
+        blobStream.end(buffer);
+      });
+    } catch (error) {
+      console.error('Error downloading or uploading file:', error);
+      throw new Error(`Unable to download or upload file: ${error}`);
+    }
   }
 }
 
