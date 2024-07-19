@@ -43,7 +43,7 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
         message = `Hemos identificado que sos beneficiario de IPS Provincia de Bs As y tenemos buenas condiciones para ofrecerte el crédito con cobro por descuento de haberes. 
         El monto de estos créditos lo determina IPS según el cupo que tengas disponible.✅`;
       } else {
-        message = 'Hemos almacenado tu CUIT asociado.✅';
+        message = 'Hemos verificado tus datos';
       }
     
       objectDataSheet['cuit'] = cuit;

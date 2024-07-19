@@ -143,11 +143,11 @@ export async function setUserCuil(req: Request, res: Response) {
     if(cuilFound) {
       user.CUIL = cuilFound[0];
       await user.save();
-      responseMessage = '⌛ Hemos guardado tu CUIL exitosamente ✅.\nProseguimos?';
+      responseMessage = '⌛ Hemos verificado tu CUIL exitosamente ✅.';
       objectDataSheet['cuil'] = cuilFound[0];
       await addRowsToSheet('cuil', cuilFound[0]);
     } else {
-      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. \n\nSi crees que cometiste un error al ingresar tu CUIL, escribe *reintentar*.';
+      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. \n\nSi crees que cometiste un error al ingresar tu CUIL, vamos pedirlo nuevamente';
     };
 
     const response = {
@@ -177,17 +177,17 @@ export async function setBenefitNumber(req: Request, res: Response) {
 
     let responseMessage: string;
 
-    const benefitNumberRegex = /^\d{3}\d{8}\d$/;
+    const benefitNumberRegex = /^\d{11}$/;
     const benefitNumberFound = message.match(benefitNumberRegex);
 
     if(benefitNumberFound) {
       user.benefitNumber = benefitNumberFound[0];
       await user.save();
-      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅\n\Deseas proseguir con los últimos datos necesarios?';
+      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
       objectDataSheet['nro de beneficio'] = benefitNumberFound[0];
       await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
     } else {
-      responseMessage = '❌ No he podido verificar el numero de beneficio. Por favor, revisa y vuelve a intentarlo escribiendo *reintentar*';
+      responseMessage = '❌ No he podido verificar el numero de beneficio.';
     };
 
     const response = {
@@ -253,11 +253,11 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
    let responseMessage: string = ''
 
    if(user.CUIT === IPS_CUIT) {
-    responseMessage = 'Excelente! Haz llenado los datos exitosamente.\n\nEscribe *vamos* para continuar.🔜';
+    responseMessage = 'Escribe *vamos* para continuar.🔜';
    } else if ( user.CUIT && CUITS_ORGANIZATIONS[user.CUIT]) {
-    responseMessage = 'Excelente! Haz llenado los datos exitosamente.\n\n Escribe *sigamos* para continuar.🔜';
+    responseMessage = 'Escribe *sigamos* para continuar.🔜';
    } else if ( user.CUIT && user.CUIT !== IPS_CUIT) {
-    responseMessage = 'Excelente! Haz llenado los datos exitosamente.\n\n Escribe *proseguir* para continuar.🔜';
+    responseMessage = 'Escribe *proseguir* para continuar.🔜';
    };
 
    const response = {
@@ -289,14 +289,6 @@ export async function setUserMedia(req: Request, res: Response) {
       return handleHttpError(res, 'user not found');
     };
 
-    if (user.dorsoDni && user.reverseDni && user.salaryReceipt) {
-      user.dorsoDni = '';
-      user.reverseDni = '';
-      user.salaryReceipt = '';
-      user.certificateSalaryReceipt = '';
-      await user.save(); 
-    };
-
     const imageUrl = await uploader.uploadImageFromMessage(message);
 
     if(!user.dorsoDni) {
@@ -307,17 +299,21 @@ export async function setUserMedia(req: Request, res: Response) {
 
     }
     else if(!user.reverseDni) {
-      if (user.CUIT === IPS_CUIT) {
-        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
-      } else {
-        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente!';
-      }
+      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       user.reverseDni = imageUrl;
       objectDataSheet['foto de anverso dni'] = imageUrl;
       await addRowsToSheet('foto de verso dni', imageUrl);
-
     }
-    else if(!user.salaryReceipt && user.CUIT === IPS_CUIT) {
+    else if (!user.salaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado haberes.';
+      user.salaryReceipt = imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      const token = generateWhatsAppToken();
+      objectDataSheet['token'] = token;
+      await addRowsToSheet('token', token)
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+    }
+    else if (!user.salaryReceipt) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       user.salaryReceipt = imageUrl;
       objectDataSheet['ultimo recibo de haberes'] = imageUrl;
@@ -326,20 +322,16 @@ export async function setUserMedia(req: Request, res: Response) {
       await addRowsToSheet('token', token)
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
-    else if(!user.salaryReceipt && user.CUIT !== IPS_CUIT) {
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado de haberes por favor';
-      user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+    else if (!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
+      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      user.certificateSalaryReceipt = imageUrl;
+      objectDataSheet['certificado de haberes'] = imageUrl;
       const token = generateWhatsAppToken();
       objectDataSheet['token'] = token;
       await addRowsToSheet('token', token)
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-    }
-    else if(!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
-      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      user.certificateSalaryReceipt = imageUrl
       await addRowsToSheet('certificado de haberes', imageUrl);
     }
+
     
     await user.save();
 
@@ -362,23 +354,22 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
   try {
     const { message, from }:Ctx = req.body.ctx;
 
+    console.log('req.body.ctx: ', req.body.ctx)
+    console.log('req.body.ctx.message: ', req.body.ctx.message)
+    console.log('req.body.ctx.message.messageContextInfo: ', req.body.ctx.message.messageContextInfo)
+
+
     const user = await models.user.findOne({ cellphone: from });
     let responseMessage;
+
+
 
     if(!user) {
       return handleHttpError(res, 'user not found');
     };
-
-    if (user.dorsoDni && user.reverseDni && user.salaryReceipt) {
-      user.dorsoDni = '';
-      user.reverseDni = '';
-      user.salaryReceipt = '';
-      user.certificateSalaryReceipt = '';
-      await user.save(); 
-    };
-
+    
     const imageUrl = await uploader.uploadPDFMessage(message);
-    console.log('imageUrl: ', imageUrl);
+    console.log('image url: ', imageUrl)
 
     if(!user.dorsoDni) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
@@ -388,17 +379,21 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
 
     }
     else if(!user.reverseDni) {
-      if (user.CUIT === IPS_CUIT) {
-        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
-      } else {
-        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente!';
-      }
+      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       user.reverseDni = imageUrl;
       objectDataSheet['foto de anverso dni'] = imageUrl;
       await addRowsToSheet('foto de verso dni', imageUrl);
-
     }
-    else if(!user.salaryReceipt && user.CUIT === IPS_CUIT) {
+    else if (!user.salaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado haberes.';
+      user.salaryReceipt = imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      const token = generateWhatsAppToken();
+      objectDataSheet['token'] = token;
+      await addRowsToSheet('token', token)
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+    }
+    else if (!user.salaryReceipt) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       user.salaryReceipt = imageUrl;
       objectDataSheet['ultimo recibo de haberes'] = imageUrl;
@@ -407,20 +402,16 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
       await addRowsToSheet('token', token)
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
-    else if(!user.salaryReceipt && user.CUIT !== IPS_CUIT) {
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado de haberes por favor';
-      user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+    else if (!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
+      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      user.certificateSalaryReceipt = imageUrl;
+      objectDataSheet['certificado de haberes'] = imageUrl;
       const token = generateWhatsAppToken();
       objectDataSheet['token'] = token;
       await addRowsToSheet('token', token)
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-    }
-    else if(!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
-      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      user.certificateSalaryReceipt = imageUrl
       await addRowsToSheet('certificado de haberes', imageUrl);
     }
+
     
     await user.save();
 
