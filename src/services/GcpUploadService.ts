@@ -22,7 +22,38 @@ class GoogleCloudStorageUploader {
       stream.on('end', () => resolve(Buffer.concat(chunks)));
       stream.on('error', reject);
     });
+  };
+
+  private async uploadBuffer(buffer: Buffer, mimeType: string, originalFilename?: string): Promise<string> {
+    const contentType = mimeType || 'application/octet-stream';
+    let fileExtension = mime.extension(contentType);
+
+    if (!fileExtension) {
+      fileExtension = mimeType === 'application/pdf' ? '.pdf' : '.jpg';
+    } else {
+      fileExtension = `.${fileExtension}`;
+    }
+
+    const fileName = `${crypto.randomUUID()}${fileExtension}`;
+
+    const bucket = this.storage.bucket(this.bucketName);
+    const file = bucket.file(fileName);
+
+    await file.save(buffer, {
+      metadata: {
+        contentType: contentType,
+        metadata: {
+          originalFilename: originalFilename || 'unknown',
+          fileSize: buffer.length,
+        },
+      },
+    });
+
+    await file.makePublic();
+
+    return `https://storage.googleapis.com/${this.bucketName}/${fileName}`;
   }
+  
 
   async uploadImageFromMessage(message: UploadImageData) {
     try {
@@ -107,6 +138,25 @@ class GoogleCloudStorageUploader {
         reject(`Unable to write file to blobStream: ${err}`);
       }
     });
+  }
+
+  async uploadPDFMessage(message: any): Promise<string> {
+    try {
+      const { documentWithCaptionMessage } = message;
+
+      if (!documentWithCaptionMessage) {
+        throw new Error('Document message not found');
+      }
+
+      const documentMessage = documentWithCaptionMessage.message.documentMessage;
+      const stream = await downloadContentFromMessage(documentMessage, 'document');
+      const buffer = await this.streamToBuffer(stream);
+
+      return await this.uploadBuffer(buffer, documentMessage.mimetype, documentMessage.fileName);
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      throw error;
+    }
   }
 }
 
