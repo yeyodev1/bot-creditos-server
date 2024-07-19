@@ -277,7 +277,90 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
 
 export async function setUserMedia(req: Request, res: Response) {
   try {
-    const { message, from }:Ctx = req.body.ctx    
+    const { message, from }:Ctx = req.body.ctx;
+
+
+    const user = await models.user.findOne({ cellphone: from });
+    let responseMessage;
+
+
+
+    if(!user) {
+      return handleHttpError(res, 'user not found');
+    };
+
+    if (user.dorsoDni && user.reverseDni && user.salaryReceipt) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+      user.certificateSalaryReceipt = '';
+      await user.save(); 
+    };
+
+    const imageUrl = await uploader.uploadImageFromMessage(message);
+
+    if(!user.dorsoDni) {
+      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
+      user.dorsoDni = imageUrl;
+      objectDataSheet['foto de verso dni'] = imageUrl;  
+      await addRowsToSheet('foto de anverso dni', imageUrl)
+
+    }
+    else if(!user.reverseDni) {
+      if (user.CUIT === IPS_CUIT) {
+        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      } else {
+        responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente!';
+      }
+      user.reverseDni = imageUrl;
+      objectDataSheet['foto de anverso dni'] = imageUrl;
+      await addRowsToSheet('foto de verso dni', imageUrl);
+
+    }
+    else if(!user.salaryReceipt && user.CUIT === IPS_CUIT) {
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      user.salaryReceipt = imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      const token = generateWhatsAppToken();
+      objectDataSheet['token'] = token;
+      await addRowsToSheet('token', token)
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+    }
+    else if(!user.salaryReceipt && user.CUIT !== IPS_CUIT) {
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado de haberes por favor';
+      user.salaryReceipt = imageUrl;
+      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
+      const token = generateWhatsAppToken();
+      objectDataSheet['token'] = token;
+      await addRowsToSheet('token', token)
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+    }
+    else if(!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
+      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      user.certificateSalaryReceipt = imageUrl
+      await addRowsToSheet('certificado de haberes', imageUrl);
+    }
+    
+    await user.save();
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user',
+          content: responseMessage,
+        }
+      ]
+    };
+
+    res.status(200).send(response);
+  } catch (error) {
+    handleHttpError(res, 'Cannot set user media');
+  }
+};
+
+export async function setUserMediaByPDF(req: Request, res: Response) {
+  try {
+    const { message, from }:Ctx = req.body.ctx;
 
     const user = await models.user.findOne({ cellphone: from });
     let responseMessage;
@@ -294,7 +377,8 @@ export async function setUserMedia(req: Request, res: Response) {
       await user.save(); 
     };
 
-    const imageUrl = await uploader.uploadImageFromMessage(message);
+    const imageUrl = await uploader.uploadPDFMessage(message);
+    console.log('imageUrl: ', imageUrl);
 
     if(!user.dorsoDni) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
