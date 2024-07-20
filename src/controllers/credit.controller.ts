@@ -5,12 +5,11 @@ import { BankService } from '../services/bank';
 import handleHttpError from '../utils/handleError';
 
 import type { Ctx } from '../interfaces/ctx.interface';
-import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
+import { addRowsToSheet } from '../utils/handleSheetData';
 import type { ApiResponseBank } from '../interfaces/bankRequest.interface';
 import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 
 const bankService = new BankService();
-
 
 export async function userHasCredit (req: Request, res: Response): Promise<void> {
   try {
@@ -46,7 +45,6 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
         message = 'Hemos verificado tus datos';
       }
     
-      objectDataSheet['cuit'] = cuit;
       await addRowsToSheet('cuit', cuit);
       await user.save();
     } else {
