@@ -7,9 +7,9 @@ import handleHttpError from '../utils/handleError';
 import GoogleCloudStorageUploader from '../services/GcpUploadService';
 import type{ Ctx } from '../interfaces/ctx.interface';
 import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
-import { addRowsToSheet, objectDataSheet } from '../utils/handleSheetData';
 import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 import { generateWhatsAppToken } from '../utils/generateToken';
+import { addRowsToSheet } from '../utils/handleSheetData';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -20,12 +20,13 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
 
+    const token = generateWhatsAppToken();
     const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
-    objectDataSheet['codigo de area'] = areaCode;
-    objectDataSheet['resto del numero'] = restOfNumber;
 
+    await addRowsToSheet('token', token)
     await addRowsToSheet('resto del numero', restOfNumber);
     await addRowsToSheet('codigo de area', areaCode);
+
     const existingUser = await models.user.findOne({ cellphone: number });
     
     if(existingUser) {
@@ -38,7 +39,6 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     });
 
     await userData.save();
-    
     res.status(200).send('user created succesfully');
   } catch (error) {
     handleHttpError(res, 'Cannot create user');
@@ -103,7 +103,6 @@ export async function setUserEmail (req: Request, res: Response) {
       user.email = foundEmail[0];
       await user.save();
       responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
-      objectDataSheet['email'] = foundEmail[0];
       await addRowsToSheet('email', foundEmail[0]);
 
     } else {
@@ -144,7 +143,6 @@ export async function setUserCuil(req: Request, res: Response) {
       user.CUIL = cuilFound[0];
       await user.save();
       responseMessage = '⌛ Hemos verificado tu CUIL exitosamente ✅.';
-      objectDataSheet['cuil'] = cuilFound[0];
       await addRowsToSheet('cuil', cuilFound[0]);
     } else {
       responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. \n\nSi crees que cometiste un error al ingresar tu CUIL, vamos pedirlo nuevamente';
@@ -184,7 +182,6 @@ export async function setBenefitNumber(req: Request, res: Response) {
       user.benefitNumber = benefitNumberFound[0];
       await user.save();
       responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
-      objectDataSheet['nro de beneficio'] = benefitNumberFound[0];
       await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
     } else {
       responseMessage = '❌ No he podido verificar el numero de beneficio.';
@@ -277,62 +274,56 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
 
 export async function setUserMedia(req: Request, res: Response) {
   try {
-    const { message, from }:Ctx = req.body.ctx;
-
-
+    const { message, from }: Ctx = req.body.ctx;
     const user = await models.user.findOne({ cellphone: from });
-    let responseMessage;
 
-
-
-    if(!user) {
+    if (!user) {
       return handleHttpError(res, 'user not found');
-    };
+    }
 
     const imageUrl = await uploader.uploadImageFromMessage(message);
 
-    if(!user.dorsoDni) {
-      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
-      user.dorsoDni = imageUrl;
-      objectDataSheet['foto de verso dni'] = imageUrl;  
-      await addRowsToSheet('foto de anverso dni', imageUrl)
+    const isEstadoMayor = CUITS_ORGANIZATIONS[user.CUIT as string] === 'Estado Mayor General de la Armada';
 
+    if (user.dorsoDni && user.reverseDni && user.salaryReceipt && !isEstadoMayor) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+    } 
+    else if (user.dorsoDni && user.reverseDni && user.salaryReceipt && user.certificateSalaryReceipt && isEstadoMayor) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+      user.certificateSalaryReceipt = '';
     }
-    else if(!user.reverseDni) {
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+
+    let responseMessage = '';
+
+    if (!user.dorsoDni) {
+      user.dorsoDni = imageUrl;
+      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
+      await addRowsToSheet('foto de anverso dni', imageUrl);
+    } else if (!user.reverseDni) {
       user.reverseDni = imageUrl;
-      objectDataSheet['foto de anverso dni'] = imageUrl;
+      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       await addRowsToSheet('foto de verso dni', imageUrl);
-    }
-    else if (!user.salaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado haberes.';
+    } else if (!user.salaryReceipt) {
       user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-      const token = generateWhatsAppToken();
-      objectDataSheet['token'] = token;
-      await addRowsToSheet('token', token)
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
+
+      if (isEstadoMayor) {
+        responseMessage += 'Ahora envía tu certificado haberes.';
+      } else {
+        responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      }
+
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-    }
-    else if (!user.salaryReceipt) {
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-      const token = generateWhatsAppToken();
-      objectDataSheet['token'] = token;
-      await addRowsToSheet('token', token)
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-    }
-    else if (!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
-      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+    } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
       user.certificateSalaryReceipt = imageUrl;
-      objectDataSheet['certificado de haberes'] = imageUrl;
-      const token = generateWhatsAppToken();
-      objectDataSheet['token'] = token;
-      await addRowsToSheet('token', token)
+      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       await addRowsToSheet('certificado de haberes', imageUrl);
     }
 
-    
     await user.save();
 
     const response = {
@@ -340,17 +331,90 @@ export async function setUserMedia(req: Request, res: Response) {
         {
           type: 'to_user',
           content: responseMessage,
-        }
-      ]
+        },
+      ],
     };
 
     res.status(200).send(response);
   } catch (error) {
     handleHttpError(res, 'Cannot set user media');
   }
-};
+}
 
 export async function setUserMediaByPDF(req: Request, res: Response) {
+  try {
+    const { message, from }: Ctx = req.body.ctx;
+    const user = await models.user.findOne({ cellphone: from });
+    console.log('req.body.ctx: ', req.body.ctx)
+    console.log('req.body.ctx.message: ', req.body.ctx.message)
+    console.log('req.body.ctx.message.messageContextInfo: ', req.body.ctx.message.messageContextInfo)
+
+    if (!user) {
+      return handleHttpError(res, 'user not found');
+    }
+
+    const imageUrl = await uploader.uploadPDFMessage(message);
+    console.log('image url: ', imageUrl)
+
+    const isEstadoMayor = CUITS_ORGANIZATIONS[user.CUIT as string] === 'Estado Mayor General de la Armada';
+
+    if (user.dorsoDni && user.reverseDni && user.salaryReceipt && !isEstadoMayor) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+    } 
+    else if (user.dorsoDni && user.reverseDni && user.salaryReceipt && user.certificateSalaryReceipt && isEstadoMayor) {
+      user.dorsoDni = '';
+      user.reverseDni = '';
+      user.salaryReceipt = '';
+      user.certificateSalaryReceipt = '';
+    }
+
+    let responseMessage = '';
+
+    if (!user.dorsoDni) {
+      user.dorsoDni = imageUrl;
+      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
+      await addRowsToSheet('foto de anverso dni', imageUrl);
+    } else if (!user.reverseDni) {
+      user.reverseDni = imageUrl;
+      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      await addRowsToSheet('foto de verso dni', imageUrl);
+    } else if (!user.salaryReceipt) {
+      user.salaryReceipt = imageUrl;
+      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
+
+      if (isEstadoMayor) {
+        responseMessage += 'Ahora envía tu certificado haberes.';
+      } else {
+        responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      }
+
+      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+    } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
+      user.certificateSalaryReceipt = imageUrl;
+      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      await addRowsToSheet('certificado de haberes', imageUrl);
+    }
+
+    await user.save();
+
+    const response = {
+      messages: [
+        {
+          type: 'to_user',
+          content: responseMessage,
+        },
+      ],
+    };
+
+    res.status(200).send(response);
+  } catch (error) {
+    handleHttpError(res, 'Cannot set user media');
+  }
+}
+
+/* 
   try {
     const { message, from }:Ctx = req.body.ctx;
 
@@ -374,41 +438,27 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
     if(!user.dorsoDni) {
       responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       user.dorsoDni = imageUrl;
-      objectDataSheet['foto de verso dni'] = imageUrl;  
       await addRowsToSheet('foto de anverso dni', imageUrl)
 
     }
     else if(!user.reverseDni) {
       responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       user.reverseDni = imageUrl;
-      objectDataSheet['foto de anverso dni'] = imageUrl;
       await addRowsToSheet('foto de verso dni', imageUrl);
     }
     else if (!user.salaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado haberes.';
       user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-      const token = generateWhatsAppToken();
-      objectDataSheet['token'] = token;
-      await addRowsToSheet('token', token)
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
     else if (!user.salaryReceipt) {
       responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       user.salaryReceipt = imageUrl;
-      objectDataSheet['ultimo recibo de haberes'] = imageUrl;
-      const token = generateWhatsAppToken();
-      objectDataSheet['token'] = token;
-      await addRowsToSheet('token', token)
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
     }
     else if (!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       user.certificateSalaryReceipt = imageUrl;
-      objectDataSheet['certificado de haberes'] = imageUrl;
-      const token = generateWhatsAppToken();
-      objectDataSheet['token'] = token;
-      await addRowsToSheet('token', token)
       await addRowsToSheet('certificado de haberes', imageUrl);
     }
 
@@ -428,4 +478,4 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
   } catch (error) {
     handleHttpError(res, 'Cannot set user media');
   }
-}
+*/

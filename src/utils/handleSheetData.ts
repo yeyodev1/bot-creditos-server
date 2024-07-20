@@ -14,28 +14,17 @@ type UserRowData = {
   ['token']: string;
 }
 
-export let objectDataSheet: UserRowData = {
-  cuil: '',
-  cuit: '',
-  email: '',
-  'codigo de area': '',
-  'resto del numero': '',
-  'nro de beneficio': '',
-  'foto de anverso dni': '',
-  'foto de verso dni': '',
-  'ultimo recibo de haberes': '',
-  'certificado de haberes': '',
-  'token': ''
-};
+let token: string | null = null;
 
 export async function addRowsToSheet(updateFieldName: keyof UserRowData, updateFieldValue: string ,sheetIndex?: number ): Promise<void> {
   const sheet = await getSheetByIndex(sheetIndex);
   const rows = await sheet.getRows<UserRowData>();
 
-  if(updateFieldName === 'resto del numero'){
-    await sheet.addRow(objectDataSheet)
+  if(updateFieldName == 'token'){
+    token = updateFieldValue;
+    await sheet.addRow({ 'token': updateFieldValue });
   } else {
-    const rowUpdateIndex = rows.findIndex(row => row.get('resto del numero') === objectDataSheet['resto del numero']);
+    const rowUpdateIndex = rows.findIndex(row => row.get('token') === token);
     rows[rowUpdateIndex].set(updateFieldName, updateFieldValue);
     await rows[rowUpdateIndex].save();
   }

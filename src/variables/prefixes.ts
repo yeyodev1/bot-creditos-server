@@ -182,6 +182,8 @@ export const WHATSAPP_ARGENTINA_PREFIXES: string[] = [
 
 export const WHATSAPP_ECUADOR_PREFIXES: string[] = [
   '995',
+  '987',
+  '993'
 ]
 
 export const CUITS_ORGANIZATIONS: { [key: string]: string }= {
