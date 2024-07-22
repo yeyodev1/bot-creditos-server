@@ -142,22 +142,25 @@ class GoogleCloudStorageUploader {
 
   async uploadPDFMessage(message: any): Promise<string> {
     try {
-      const { documentWithCaptionMessage } = message;
-
-      if (!documentWithCaptionMessage) {
-        throw new Error('Document message not found');
+      let documentMessage;
+  
+      if (message.documentWithCaptionMessage) {
+        documentMessage = message.documentWithCaptionMessage.message.documentMessage;
+      } else if (message.documentMessage) {
+        documentMessage = message.documentMessage;
+      } else {
+        throw new Error('No document message found, handling as image');
       }
-
-      const documentMessage = documentWithCaptionMessage.message.documentMessage;
+  
       const stream = await downloadContentFromMessage(documentMessage, 'document');
       const buffer = await this.streamToBuffer(stream);
-
+  
       return await this.uploadBuffer(buffer, documentMessage.mimetype, documentMessage.fileName);
     } catch (error) {
       console.error('Error uploading PDF:', error);
       throw error;
     }
-  }
+  }  
 }
 
 export default GoogleCloudStorageUploader;

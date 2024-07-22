@@ -348,18 +348,24 @@ export async function setUserMedia(req: Request, res: Response) {
 
 export async function setUserMediaByPDF(req: Request, res: Response) {
   try {
-    const { message, from }: Ctx = req.body.ctx;
+    const { message, from, urlTempFile }: Ctx = req.body.ctx;
     const user = await models.user.findOne({ cellphone: from });
-    console.log('req.body.ctx: ', req.body.ctx)
-    console.log('req.body.ctx.message: ', req.body.ctx.message)
-    console.log('req.body.ctx.message.messageContextInfo: ', req.body.ctx.message.messageContextInfo)
 
     if (!user) {
       return handleHttpError(res, 'user not found');
     }
 
-    const imageUrl = await uploader.uploadPDFMessage(message);
-    console.log('image url: ', imageUrl)
+    let imageUrl;
+    try {
+      imageUrl = await uploader.uploadPDFMessage(message);
+    } catch (error) {
+      console.log('Handling as image due to error:', error);
+      if (urlTempFile) {
+        imageUrl = urlTempFile;
+      } else {
+        return handleHttpError(res, 'Cannot process file');
+      }
+    }
 
     const isEstadoMayor = CUITS_ORGANIZATIONS[user.CUIT as string] === 'Estado Mayor General de la Armada';
 
@@ -393,13 +399,18 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
         responseMessage += 'Ahora envía tu certificado haberes.';
       } else {
         responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      }
+      };
 
+      
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+      
+      await addRowsToSheet('final de chat', getFormattedDateTime());
     } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
       user.certificateSalaryReceipt = imageUrl;
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      
       await addRowsToSheet('certificado de haberes', imageUrl);
+      await addRowsToSheet('final de chat', getFormattedDateTime());
     }
 
     await user.save();
@@ -415,72 +426,15 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
 
     res.status(200).send(response);
   } catch (error) {
-    handleHttpError(res, 'Cannot set user media');
-  }
-}
-
-/* 
-  try {
-    const { message, from }:Ctx = req.body.ctx;
-
-    console.log('req.body.ctx: ', req.body.ctx)
-    console.log('req.body.ctx.message: ', req.body.ctx.message)
-    console.log('req.body.ctx.message.messageContextInfo: ', req.body.ctx.message.messageContextInfo)
-
-
-    const user = await models.user.findOne({ cellphone: from });
-    let responseMessage;
-
-
-
-    if(!user) {
-      return handleHttpError(res, 'user not found');
-    };
-    
-    const imageUrl = await uploader.uploadPDFMessage(message);
-    console.log('image url: ', imageUrl)
-
-    if(!user.dorsoDni) {
-      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
-      user.dorsoDni = imageUrl;
-      await addRowsToSheet('foto de anverso dni', imageUrl)
-
-    }
-    else if(!user.reverseDni) {
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
-      user.reverseDni = imageUrl;
-      await addRowsToSheet('foto de verso dni', imageUrl);
-    }
-    else if (!user.salaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora envía tu certificado haberes.';
-      user.salaryReceipt = imageUrl;
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-    }
-    else if (!user.salaryReceipt) {
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      user.salaryReceipt = imageUrl;
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-    }
-    else if (!user.certificateSalaryReceipt && 'Estado Mayor General de la Armada' === CUITS_ORGANIZATIONS[user.CUIT as string]) {
-      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      user.certificateSalaryReceipt = imageUrl;
-      await addRowsToSheet('certificado de haberes', imageUrl);
-    }
-
-    
-    await user.save();
-
+    console.error('Error in setUserMediaByPDF:', error);
     const response = {
       messages: [
         {
           type: 'to_user',
-          content: responseMessage,
-        }
-      ]
+          content: 'Lo siento, ahora hay un problema con la toma de datos por archivo. Por favor, envía una foto o una captura del archivo',
+        },
+      ],
     };
-
     res.status(200).send(response);
-  } catch (error) {
-    handleHttpError(res, 'Cannot set user media');
-  }
-*/
+  };
+};
