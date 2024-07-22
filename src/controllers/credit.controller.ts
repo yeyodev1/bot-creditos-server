@@ -31,6 +31,9 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
     
     let message: string;
     const credit: ApiResponseBank = await bankService.validateCreditApproval(user.CUIL);
+
+    let stepValid: string;
+    
     if (credit.objects[0]) {
       const { cuit } = credit.objects[0];
       user.CUIT = cuit;
@@ -44,11 +47,13 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
       } else {
         message = 'Hemos verificado tus datos';
       }
-    
+
+      stepValid = 'valido';
       await addRowsToSheet('cuit', cuit);
       await user.save();
     } else {
-      message = 'Lo sentimos, no tenemos una línea de crédito que se ajuste a ti. 😔\n\n Si crees que cometiste un error al ingresar tu CUIL, escribe reintentar.\n\n\n¡Gracias por tu comprensión y hasta pronto! 👋';
+      stepValid = 'invalido';
+      message = 'Lo sentimos, no tenemos una línea de crédito que se ajuste a ti. 😔\n\n Si crees que cometiste un error puedes intentarlo nuevamente.\n\n\n¡Gracias por tu comprensión y hasta pronto! 👋';
     };
 
     const response = {
@@ -57,7 +62,8 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
           type: 'to_user',
           content: message
         }
-      ]
+      ],
+      stepValid
     }
 
     res.status(200).send(response);

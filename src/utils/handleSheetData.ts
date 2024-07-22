@@ -1,6 +1,8 @@
 import { getSheetByIndex } from '../services/SheetService';
 
 type UserRowData = {
+  ['inicio de chat']: string;
+  ['final de chat']: string;
   cuil: string;
   cuit: string;
   email: string;

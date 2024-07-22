@@ -10,6 +10,7 @@ import { extractPrefixAndNumber } from '../utils/extractPrefixAndNumber';
 import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 import { generateWhatsAppToken } from '../utils/generateToken';
 import { addRowsToSheet } from '../utils/handleSheetData';
+import { getFormattedDateTime } from '../utils/getFormatDateTime';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -26,6 +27,7 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     await addRowsToSheet('token', token)
     await addRowsToSheet('resto del numero', restOfNumber);
     await addRowsToSheet('codigo de area', areaCode);
+    await addRowsToSheet('inicio de chat', getFormattedDateTime());
 
     const existingUser = await models.user.findOne({ cellphone: number });
     
@@ -96,17 +98,20 @@ export async function setUserEmail (req: Request, res: Response) {
     
     let responseMessage: string;
 
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const foundEmail = message.match(emailRegex);
 
+    let validEmail: string
     if (foundEmail) {
       user.email = foundEmail[0];
+      validEmail = 'valido';
       await user.save();
       responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
       await addRowsToSheet('email', foundEmail[0]);
 
     } else {
-      responseMessage = '📧 Necesitas escribir un correo electrónico válido, por favor.';
+      validEmail = 'invalido';
+      responseMessage = '❌ Necesitas escribir un correo electrónico válido, por favor.';
     };
 
     const response = {
@@ -115,7 +120,8 @@ export async function setUserEmail (req: Request, res: Response) {
           type: 'to_user', 
           content: responseMessage
         }
-      ]
+      ],
+      validEmail
     };
 
     res.status(200).send(response)
@@ -138,14 +144,19 @@ export async function setUserCuil(req: Request, res: Response) {
 
     const cuilRegex = /^\d{2}-\d{8}-\d{1}$|^\d{11}$/;
     const cuilFound = message.match(cuilRegex);
+    
+    let cuilValid: string;
 
     if(cuilFound) {
+      cuilValid = "valido";
       user.CUIL = cuilFound[0];
       await user.save();
       responseMessage = '⌛ Hemos verificado tu CUIL exitosamente ✅.';
       await addRowsToSheet('cuil', cuilFound[0]);
     } else {
+      cuilValid = "invalido"
       responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. \n\nSi crees que cometiste un error al ingresar tu CUIL, vamos pedirlo nuevamente';
+      let found = cuilFound;
     };
 
     const response = {
@@ -154,7 +165,8 @@ export async function setUserCuil(req: Request, res: Response) {
           type: 'to_user', 
           content: responseMessage
         }
-      ]
+      ],
+      userCuilValid: cuilValid,
     };
 
     res.status(200).send(response);
@@ -178,12 +190,16 @@ export async function setBenefitNumber(req: Request, res: Response) {
     const benefitNumberRegex = /^\d{11}$/;
     const benefitNumberFound = message.match(benefitNumberRegex);
 
+    let benefitNumberValid: string;
+
     if(benefitNumberFound) {
+      benefitNumberValid = 'valido';
       user.benefitNumber = benefitNumberFound[0];
       await user.save();
       responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
       await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
     } else {
+      benefitNumberValid = 'invalido';
       responseMessage = '❌ No he podido verificar el numero de beneficio.';
     };
 
@@ -193,7 +209,8 @@ export async function setBenefitNumber(req: Request, res: Response) {
           type: 'to_user', 
           content: responseMessage
         }
-      ]
+      ],
+      benefitNumberValid
     };
 
     res.status(200).send(response);
@@ -245,25 +262,11 @@ export async function verifyCuitOrganizations(req: Request, res: Response) {
  
    if(!user.CUIT) {
      return handleHttpError(res, 'user cuit not found')
-   }
-
-   let responseMessage: string = ''
-
-   if(user.CUIT === IPS_CUIT) {
-    responseMessage = 'Escribe *vamos* para continuar.🔜';
-   } else if ( user.CUIT && CUITS_ORGANIZATIONS[user.CUIT]) {
-    responseMessage = 'Escribe *sigamos* para continuar.🔜';
-   } else if ( user.CUIT && user.CUIT !== IPS_CUIT) {
-    responseMessage = 'Escribe *proseguir* para continuar.🔜';
    };
 
    const response = {
-    messages: [
-      {
-        type: 'to_user',
-        content: responseMessage,
-      }
-    ]
+    messages: [],
+    userCuit: user.CUIT,
    }
  
    res.status(200).send(response)
@@ -318,10 +321,12 @@ export async function setUserMedia(req: Request, res: Response) {
       }
 
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+      await addRowsToSheet('final de chat', getFormattedDateTime());
     } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
       user.certificateSalaryReceipt = imageUrl;
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       await addRowsToSheet('certificado de haberes', imageUrl);
+      await addRowsToSheet('certificado de haberes', getFormattedDateTime());
     }
 
     await user.save();
