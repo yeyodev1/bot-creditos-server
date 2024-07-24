@@ -5,3 +5,4 @@ dist/
 gcpFilename.json
 
 pnpm-lock.yaml
+.vercel
