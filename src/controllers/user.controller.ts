@@ -65,9 +65,9 @@ export async function setUserName(req: Request, res: Response): Promise<void> {
     if (hasFirstNameAndLastName) {
       user.name = message;
       await user.save();
-      responseMessage = '✅ ¡Tu nombre se ha registro exitosamente!';
+      responseMessage = '¡Tu nombre se ha registro exitosamente!';
     } else {
-      responseMessage = '📌 El nombre debe contener al menos un nombre y un apellido. 😊';
+      responseMessage = 'El nombre debe contener al menos un nombre y un apellido.';
     };
 
     const response = {
@@ -106,12 +106,12 @@ export async function setUserEmail (req: Request, res: Response) {
       user.email = foundEmail[0];
       validEmail = 'valido';
       await user.save();
-      responseMessage = '✅ ¡Tu correo electrónico se ha registrado exitosamente! 📧';
+      responseMessage = '¡Tu correo electrónico se ha registrado exitosamente!';
       await addRowsToSheet('email', foundEmail[0]);
 
     } else {
       validEmail = 'invalido';
-      responseMessage = '❌ Necesitas escribir un correo electrónico válido, por favor.';
+      responseMessage = 'Necesitas escribir un correo electrónico válido, por favor.';
     };
 
     const response = {
@@ -151,11 +151,11 @@ export async function setUserCuil(req: Request, res: Response) {
       cuilValid = "valido";
       user.CUIL = cuilFound[0];
       await user.save();
-      responseMessage = '⌛ Hemos verificado tu CUIL exitosamente ✅.';
+      responseMessage = 'Hemos verificado tu CUIL exitosamente.';
       await addRowsToSheet('cuil', cuilFound[0]);
     } else {
       cuilValid = "invalido"
-      responseMessage = '❌ No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. \n\nSi crees que cometiste un error al ingresar tu CUIL, vamos pedirlo nuevamente';
+      responseMessage = 'No he podido verificar el CUIL. Por favor, revisa y vuelve a intentarlo. \n\nSi crees que cometiste un error al ingresar tu CUIL, vamos pedirlo nuevamente';
       let found = cuilFound;
     };
 
@@ -196,11 +196,11 @@ export async function setBenefitNumber(req: Request, res: Response) {
       benefitNumberValid = 'valido';
       user.benefitNumber = benefitNumberFound[0];
       await user.save();
-      responseMessage = 'Tu número de beneficio se ha registrado exitosamente! ✅';
+      responseMessage = 'Tu número de beneficio se ha registrado exitosamente!';
       await addRowsToSheet('nro de beneficio', benefitNumberFound[0]);
     } else {
       benefitNumberValid = 'invalido';
-      responseMessage = '❌ No he podido verificar el numero de beneficio.';
+      responseMessage = 'No he podido verificar el numero de beneficio.';
     };
 
     const response = {
@@ -229,10 +229,10 @@ export async function getBenefitNumber(req: Request, res: Response) {
       return handleHttpError(res, 'user not found');
     };
 
-    let responseMessage = 'Ups no tienes un número de beneficio registrado 😔';
+    let responseMessage = 'Ups no tienes un número de beneficio registrado';
 
     if(user.benefitNumber) {
-      responseMessage = `Tu número de beneficio es: ${user.benefitNumber} 🚀` 
+      responseMessage = `Tu número de beneficio es: ${user.benefitNumber}` 
     }
 
     const response = {
@@ -304,15 +304,15 @@ export async function setUserMedia(req: Request, res: Response) {
 
     if (!user.dorsoDni) {
       user.dorsoDni = imageUrl;
-      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
+      responseMessage = '¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
       await addRowsToSheet('foto de anverso dni', imageUrl);
     } else if (!user.reverseDni) {
       user.reverseDni = imageUrl;
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      responseMessage = '¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
       await addRowsToSheet('foto de verso dni', imageUrl);
     } else if (!user.salaryReceipt) {
       user.salaryReceipt = imageUrl;
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
+      responseMessage = '¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
 
       if (isEstadoMayor) {
         responseMessage += 'Ahora envía tu certificado haberes.';
@@ -324,7 +324,7 @@ export async function setUserMedia(req: Request, res: Response) {
       await addRowsToSheet('final de chat', getFormattedDateTime());
     } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
       user.certificateSalaryReceipt = imageUrl;
-      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      responseMessage = '¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       await addRowsToSheet('certificado de haberes', imageUrl);
       await addRowsToSheet('certificado de haberes', getFormattedDateTime());
     }
@@ -385,15 +385,15 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
 
     if (!user.dorsoDni) {
       user.dorsoDni = imageUrl;
-      responseMessage = '✅ ¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
+      responseMessage = '¡Tu frente de DNI se ha registrado exitosamente!\n\nAhora envía el reverso';
       await addRowsToSheet('foto de anverso dni', imageUrl);
     } else if (!user.reverseDni) {
       user.reverseDni = imageUrl;
-      responseMessage = '✅ ¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+      responseMessage = '¡El reverso de tu DNI se ha registrado exitosamente!\n\nAhora envía tu último recibo de haberes';
       await addRowsToSheet('foto de verso dni', imageUrl);
     } else if (!user.salaryReceipt) {
       user.salaryReceipt = imageUrl;
-      responseMessage = '✅ ¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
+      responseMessage = '¡Tu recibo de haberes se ha registrado exitosamente!\n\n';
 
       if (isEstadoMayor) {
         responseMessage += 'Ahora envía tu certificado haberes.';
@@ -407,7 +407,7 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
       await addRowsToSheet('final de chat', getFormattedDateTime());
     } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
       user.certificateSalaryReceipt = imageUrl;
-      responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+      responseMessage = '¡Tu certificado de haberes se ha registrado exitosamente!\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       
       await addRowsToSheet('certificado de haberes', imageUrl);
       await addRowsToSheet('final de chat', getFormattedDateTime());

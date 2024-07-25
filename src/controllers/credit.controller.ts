@@ -40,10 +40,10 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
   
       if (cuit in CUITS_ORGANIZATIONS) {
         const userCuitOrg = CUITS_ORGANIZATIONS[cuit as keyof typeof CUITS_ORGANIZATIONS];
-        message = `Hemos identificado que sos empleado de ${userCuitOrg} y tenemos las mejores condiciones para ofrecerte el crédito con cobro por descuento de haberes (Decreto 14-2012).\n\✅`;
+        message = `Hemos identificado que sos empleado de ${userCuitOrg} y tenemos las mejores condiciones para ofrecerte el crédito con cobro por descuento de haberes (Decreto 14-2012).\n\n`;
       } else if (cuit === IPS_CUIT) {
         message = `Hemos identificado que sos beneficiario de IPS Provincia de Bs As y tenemos buenas condiciones para ofrecerte el crédito con cobro por descuento de haberes. 
-        El monto de estos créditos lo determina IPS según el cupo que tengas disponible.✅`;
+        El monto de estos créditos lo determina IPS según el cupo que tengas disponible.`;
       } else {
         message = 'Hemos verificado tus datos';
       }
@@ -53,7 +53,7 @@ export async function userHasCredit (req: Request, res: Response): Promise<void>
       await user.save();
     } else {
       stepValid = 'invalido';
-      message = 'Lo sentimos, no tenemos una línea de crédito que se ajuste a ti. 😔\n\n Si crees que cometiste un error puedes intentarlo nuevamente.\n\n\n¡Gracias por tu comprensión y hasta pronto! 👋';
+      message = 'Lo sentimos, no tenemos una línea de crédito que se ajuste a ti. \n\n Si crees que cometiste un error puedes intentarlo nuevamente.\n\n\n¡Gracias por tu comprensión y hasta pronto!';
     };
 
     const response = {
