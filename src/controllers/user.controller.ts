@@ -1,4 +1,5 @@
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { Request, Response } from 'express';
 import { Storage } from '@google-cloud/storage';
 
@@ -21,10 +22,10 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   try {
     const { from: number }: Ctx = req.body.ctx;
 
-    const token = generateWhatsAppToken();
+    const sheetRowID = crypto.randomUUID();
     const {areaCode, restOfNumber} = extractPrefixAndNumber(number);
 
-    await addRowsToSheet('token', token)
+    await addRowsToSheet('uuid', sheetRowID);
     await addRowsToSheet('resto del numero', restOfNumber);
     await addRowsToSheet('codigo de area', areaCode);
     await addRowsToSheet('inicio de chat', getFormattedDateTime());
@@ -318,15 +319,20 @@ export async function setUserMedia(req: Request, res: Response) {
         responseMessage += 'Ahora envía tu certificado haberes.';
       } else {
         responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+        const token = generateWhatsAppToken();
+        await addRowsToSheet('token', token);
       }
-
+      
       await addRowsToSheet('ultimo recibo de haberes', imageUrl);
       await addRowsToSheet('final de chat', getFormattedDateTime());
     } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
+      const token = generateWhatsAppToken();
       user.certificateSalaryReceipt = imageUrl;
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+
       await addRowsToSheet('certificado de haberes', imageUrl);
       await addRowsToSheet('certificado de haberes', getFormattedDateTime());
+      await addRowsToSheet('token', token);
     }
 
     await user.save();
@@ -399,6 +405,8 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
         responseMessage += 'Ahora envía tu certificado haberes.';
       } else {
         responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+        const token = generateWhatsAppToken();
+        await addRowsToSheet('token', token);
       };
 
       
@@ -406,9 +414,11 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
       
       await addRowsToSheet('final de chat', getFormattedDateTime());
     } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
+      const token = generateWhatsAppToken();
       user.certificateSalaryReceipt = imageUrl;
       responseMessage = '✅ ¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
       
+      await addRowsToSheet('token', token);
       await addRowsToSheet('certificado de haberes', imageUrl);
       await addRowsToSheet('final de chat', getFormattedDateTime());
     }
