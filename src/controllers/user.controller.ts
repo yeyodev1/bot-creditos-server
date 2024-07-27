@@ -303,36 +303,40 @@ export async function setUserMedia(req: Request, res: Response) {
 
     let responseMessage = '';
 
-    if (!user.dorsoDni) {
-      user.dorsoDni = imageUrl;
-      responseMessage = '¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
-      await addRowsToSheet('foto de anverso dni', imageUrl);
-    } else if (!user.reverseDni) {
-      user.reverseDni = imageUrl;
-      responseMessage = '¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
-      await addRowsToSheet('foto de verso dni', imageUrl);
-    } else if (!user.salaryReceipt) {
-      user.salaryReceipt = imageUrl;
-      responseMessage = '¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
-
-      if (isEstadoMayor) {
-        responseMessage += 'Ahora envía tu certificado haberes.';
-      } else {
-        responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+    if(user.CUIT) {
+      if (!user.dorsoDni) {
+        user.dorsoDni = imageUrl;
+        responseMessage = '¡Tu frente de DNI se ha registrado exitosamente! 📄\n\nAhora envía el reverso';
+        await addRowsToSheet('foto de anverso dni', imageUrl);
+      } else if (!user.reverseDni) {
+        user.reverseDni = imageUrl;
+        responseMessage = '¡El reverso de tu DNI se ha registrado exitosamente! 📄\n\nAhora envía tu último recibo de haberes';
+        await addRowsToSheet('foto de verso dni', imageUrl);
+      } else if (!user.salaryReceipt) {
+        user.salaryReceipt = imageUrl;
+        responseMessage = '¡Tu recibo de haberes se ha registrado exitosamente! 📄\n\n';
+  
+        if (isEstadoMayor) {
+          responseMessage += 'Ahora envía tu certificado haberes.';
+        } else {
+          responseMessage += 'Ahora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+          const token = generateWhatsAppToken();
+          await addRowsToSheet('token', token);
+        }
+        
+        await addRowsToSheet('ultimo recibo de haberes', imageUrl);
+        await addRowsToSheet('final de chat', getFormattedDateTime());
+      } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
         const token = generateWhatsAppToken();
+        user.certificateSalaryReceipt = imageUrl;
+        responseMessage = '¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
+        await addRowsToSheet('certificado de haberes', imageUrl);
+        await addRowsToSheet('certificado de haberes', getFormattedDateTime());
         await addRowsToSheet('token', token);
       }
-      
-      await addRowsToSheet('ultimo recibo de haberes', imageUrl);
-      await addRowsToSheet('final de chat', getFormattedDateTime());
-    } else if (!user.certificateSalaryReceipt && isEstadoMayor) {
-      const token = generateWhatsAppToken();
-      user.certificateSalaryReceipt = imageUrl;
-      responseMessage = '¡Tu certificado de haberes se ha registrado exitosamente! 📄\n\nAhora vamos a necesitar unos minutos para analizar tu solicitud, y darte una respuesta.';
-      await addRowsToSheet('certificado de haberes', imageUrl);
-      await addRowsToSheet('certificado de haberes', getFormattedDateTime());
-      await addRowsToSheet('token', token);
-    }
+    } else {
+      responseMessage = 'Antes de enviar documentación pídeme hacer una solicitud de crédito, por favor';
+    };
 
     await user.save();
 
