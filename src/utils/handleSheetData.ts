@@ -14,19 +14,20 @@ type UserRowData = {
   ['ultimo recibo de haberes']: string;
   ['certificado de haberes']: string;
   ['token']: string;
+  ['uuid']: string;
 }
 
-let token: string | null = null;
+let uuid: string | null = null;
 
 export async function addRowsToSheet(updateFieldName: keyof UserRowData, updateFieldValue: string ,sheetIndex?: number ): Promise<void> {
   const sheet = await getSheetByIndex(sheetIndex);
   const rows = await sheet.getRows<UserRowData>();
 
-  if(updateFieldName == 'token'){
-    token = updateFieldValue;
-    await sheet.addRow({ 'token': updateFieldValue });
+  if(updateFieldName == 'uuid'){
+    uuid = updateFieldValue;
+    await sheet.addRow({ 'uuid': updateFieldValue });
   } else {
-    const rowUpdateIndex = rows.findIndex(row => row.get('token') === token);
+    const rowUpdateIndex = rows.findIndex(row => row.get('uuid') === uuid);
     rows[rowUpdateIndex].set(updateFieldName, updateFieldValue);
     await rows[rowUpdateIndex].save();
   }
