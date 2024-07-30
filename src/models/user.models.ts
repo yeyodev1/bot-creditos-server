@@ -67,7 +67,11 @@ const userSchema = new mongoose.Schema(
       ref: 'credit',
       default: null
     }
-  }
+  },
+  {
+    timestamps: true,
+    versionKey: false
+  },
 )
 
 export default mongoose.model('user', userSchema)

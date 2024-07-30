@@ -455,3 +455,45 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
     res.status(200).send(response);
   };
 };
+
+export async function verifyBotAvailability(req: Request, res: Response) {
+  try {
+    const { from }: { from: string } = req.body.ctx;
+
+    const user = await models.user.findOne({ cellphone: from });
+    console.log('user: ', user);
+
+    let isUserAllow = 'permitido';
+
+    const isEstadoMayor = CUITS_ORGANIZATIONS[user?.CUIT as string] === 'Estado Mayor General de la Armada';
+    const now = new Date();
+    const twoDaysAgo = new Date(now);
+    twoDaysAgo.setDate(now.getDate() - 2);
+
+    const allFieldsFilled = user?.dorsoDni && user.reverseDni && user.salaryReceipt && (isEstadoMayor ? user.certificateSalaryReceipt : true);
+    const lastUpdatedMoreThanTwoDaysAgo = new Date(user?.updatedAt!) <= twoDaysAgo;
+
+    if (user?.CUIT) {
+      if (isEstadoMayor) {
+        if (allFieldsFilled && !lastUpdatedMoreThanTwoDaysAgo) {
+          isUserAllow = 'no permitido';
+        }
+      } else {
+        if (allFieldsFilled && !lastUpdatedMoreThanTwoDaysAgo) {
+          isUserAllow = 'no permitido';
+        }
+      }
+    }
+
+    const response = {
+      messages: [],
+      isUserAllow
+    };
+    console.log('response: ', response);
+
+    res.status(200).send(response);
+  } catch (error) {
+    console.error('errorsote: ', error);
+    handleHttpError(res, 'cannot check availability for specific user');
+  }
+}

@@ -10,6 +10,7 @@ import {
 	getBenefitNumber, 
 	verifyCuitOrganizations,
 	setUserMediaByPDF,
+	verifyBotAvailability,
 } from '../controllers/user.controller';
 import { userValidatorCreate } from '../validators/user.validator';
 
@@ -25,5 +26,7 @@ router.post('/set-user-benefit-number', setBenefitNumber);
 
 router.post('/get-benefit-number', getBenefitNumber);
 router.post('/verify-cuit-organizations', verifyCuitOrganizations);
+
+router.post('/verify-bot-availability', verifyBotAvailability);
 
 export default router;
