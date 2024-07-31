@@ -12,6 +12,7 @@ import { CUITS_ORGANIZATIONS, IPS_CUIT } from '../variables/prefixes';
 import { generateWhatsAppToken } from '../utils/generateToken';
 import { addRowsToSheet } from '../utils/handleSheetData';
 import { getFormattedDateTime } from '../utils/getFormatDateTime';
+import { handleBotAvailability } from '../utils/calculateUserIsAllow';
 
 const bucketName = 'botcreditos-bucket-images';
 const keyFilenamePath = path.join(process.cwd(), '/gcpFilename.json');
@@ -288,6 +289,12 @@ export async function setUserMedia(req: Request, res: Response) {
     const imageUrl = await uploader.uploadImageFromMessage(message);
 
     const isEstadoMayor = CUITS_ORGANIZATIONS[user.CUIT as string] === 'Estado Mayor General de la Armada';
+    const now = new Date();
+    const twoDaysAgo = new Date(now);
+    twoDaysAgo.setDate(now.getDate() - 2);
+    const allFieldsFilled = user?.dorsoDni && user.reverseDni && user.salaryReceipt && (isEstadoMayor ? user.certificateSalaryReceipt : true);
+
+    const isUserAllow = handleBotAvailability(user, allFieldsFilled, twoDaysAgo);
 
     if (user.dorsoDni && user.reverseDni && user.salaryReceipt && !isEstadoMayor) {
       user.dorsoDni = '';
@@ -347,6 +354,7 @@ export async function setUserMedia(req: Request, res: Response) {
           content: responseMessage,
         },
       ],
+      isUserAllow
     };
 
     res.status(200).send(response);
@@ -377,6 +385,13 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
     }
 
     const isEstadoMayor = CUITS_ORGANIZATIONS[user.CUIT as string] === 'Estado Mayor General de la Armada';
+    const now = new Date();
+    const twoDaysAgo = new Date(now);
+    twoDaysAgo.setDate(now.getDate() - 2);
+    const allFieldsFilled = user?.dorsoDni && user.reverseDni && user.salaryReceipt && (isEstadoMayor ? user.certificateSalaryReceipt : true);
+
+    const isUserAllow = handleBotAvailability(user, allFieldsFilled, twoDaysAgo);
+
 
     if (user.dorsoDni && user.reverseDni && user.salaryReceipt && !isEstadoMayor) {
       user.dorsoDni = '';
@@ -439,6 +454,7 @@ export async function setUserMediaByPDF(req: Request, res: Response) {
           content: responseMessage,
         },
       ],
+      isUserAllow
     };
 
     res.status(200).send(response);
